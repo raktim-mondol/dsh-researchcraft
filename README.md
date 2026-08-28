@@ -27,10 +27,10 @@ The profile must also list `@deepseek-ai/dsh-web-app` before this bundle.
 ## Run
 
 ```sh
-dsh-researchcraft
+dsh --profile researchcraft
 ```
 
-Same as `dsh --profile researchcraft`. Opens the Harness web UI (typically `http://127.0.0.1:3080`).
+Opens the Harness web UI (typically `http://127.0.0.1:3080`).
 
 ## What it adds
 
