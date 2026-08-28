@@ -262,53 +262,12 @@
 
 # ── literature & academic search MCP connectors ─────────────────────────────
 
-# Each instance is one `mcp-client` plugin row (per-server, like tool-subagent
-# above) — it registers only into the shared `tools` registry and provides no
-# service of its own, so — like tool-web — it needs no realm: every session on
-# this preset resolves the same connected server. Tools surface as
-# `mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__consensus__*`.
-#
-# Parallel and Firecrawl work keyless out of the box (rate-limited); setting
-# PARALLEL_API_KEY / FIRECRAWL_API_KEY raises the limit. A connection failure
-# never blocks agent startup (`failOnStartupError` defaults false) — the
-# server just retries in the background.
-- id: mcp-parallel
-  name: '@deepseek-ai/dsh-mcp-client'
-  config:
-    serverName: parallel
-    transport: streamable-http
-    url: https://search.parallel.ai/mcp
-    headers:
-      Authorization: !!js (process.env.PARALLEL_API_KEY && ('Bearer ' + process.env.PARALLEL_API_KEY)) || ''
-
-- id: mcp-firecrawl
-  name: '@deepseek-ai/dsh-mcp-client'
-  config:
-    serverName: firecrawl
-    transport: streamable-http
-    url: !!js (process.env.FIRECRAWL_API_KEY && ('https://mcp.firecrawl.dev/' + encodeURIComponent(process.env.FIRECRAWL_API_KEY) + '/v2/mcp')) || 'https://mcp.firecrawl.dev/v2/mcp'
-
-# Consensus and Scite's hosted MCP servers authenticate via OAuth sign-in in a
-# browser app; DSH has no interactive OAuth flow, so these connectors only
-# activate when a personal bearer token is available — stay disabled (not
-# merely keyless) otherwise, since an unauthenticated attempt would just spin
-# in `mcp-client`'s reconnect loop.
-- id: mcp-consensus
-  name: '@deepseek-ai/dsh-mcp-client'
-  disabled: !!js (process.env.CONSENSUS_API_KEY ?? '') === ''
-  config:
-    serverName: consensus
-    transport: streamable-http
-    url: https://mcp.consensus.app/mcp
-    headers:
-      Authorization: !!js (process.env.CONSENSUS_API_KEY && ('Bearer ' + process.env.CONSENSUS_API_KEY)) || ''
-
-- id: mcp-scite
-  name: '@deepseek-ai/dsh-mcp-client'
-  disabled: !!js (process.env.SCITE_API_KEY ?? '') === ''
-  config:
-    serverName: scite
-    transport: streamable-http
-    url: https://api.scite.ai/mcp
-    headers:
-      Authorization: !!js (process.env.SCITE_API_KEY && ('Bearer ' + process.env.SCITE_API_KEY)) || ''
+# One JS module mounts all four `mcp-client` instances programmatically
+# (rather than static rows) so each server's key can come from the
+# credentials store (Settings -> ResearchCraft API keys) as well as its env
+# var — see mcp-connectors.js for the resolution order and per-server detail.
+# Tools surface as `mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__consensus__*`,
+# `mcp__scite__*`. No realm needed: like tool-web, it registers only into the
+# shared `tools` registry and provides no service of its own.
+- id: mcp-connectors
+  name: dsh-researchcraft/mcp-connectors

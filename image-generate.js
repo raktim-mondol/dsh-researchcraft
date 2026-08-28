@@ -3,6 +3,7 @@ import { dirname, isAbsolute, resolve } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { generateImages } from './image-gen-client.js'
 import { getImageGenConfig, imageGenConfigured } from './image-gen-config.js'
+import { resolveEnv } from './credential-env.js'
 
 function workspaceRoot(exec) {
   const session = exec.agent?.session
@@ -59,14 +60,21 @@ export function applyImageGenerate(ctx) {
       },
     },
     async execute(args, exec) {
-      if (!imageGenConfigured() && !args.model?.trim()) {
+      const [geminiApiKey, imageApiKey] = await Promise.all([
+        resolveEnv('GEMINI_API_KEY'),
+        resolveEnv('IMAGE_API_KEY'),
+      ])
+      const keyOverrides = { geminiApiKey, imageApiKey }
+
+      if (!imageGenConfigured(keyOverrides) && !args.model?.trim()) {
         return {
           ok: false,
-          error: 'image_generate is not configured. Set GEMINI_API_KEY for the default nano-banana path, '
-            + 'or IMAGE_MODEL + IMAGE_BASE_URL + IMAGE_API_KEY for an OpenAI-compatible Images API.',
+          error: 'image_generate is not configured. Set GEMINI_API_KEY (Settings -> ResearchCraft API keys, or the '
+            + 'env var) for the default nano-banana path, or IMAGE_MODEL + IMAGE_BASE_URL + IMAGE_API_KEY for an '
+            + 'OpenAI-compatible Images API.',
         }
       }
-      const cfg = getImageGenConfig({ model: args.model, provider: args.provider })
+      const cfg = getImageGenConfig({ model: args.model, provider: args.provider, ...keyOverrides })
       if (!cfg.apiKey || !cfg.model) {
         return { ok: false, error: 'an image model and API key are required (see the tool description)' }
       }

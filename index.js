@@ -7,12 +7,14 @@ import { applyRunpodRun } from './runpod-run.js'
 import { applyWorkflows } from './workflows.js'
 import { RESEARCHCRAFT_PROMPT } from './prompt.js'
 import { seed } from './seed.js'
+import { registerKeysSettings } from './settings-keys.js'
 
 export const name = 'dsh-researchcraft'
-export const inject = ['tools', 'systemPrompt']
+export const inject = ['tools', 'systemPrompt', 'settings']
 
 export function apply(ctx) {
   seed()
+  registerKeysSettings(ctx)
   ctx.systemPrompt.section({
     name: 'researchcraft',
     order: 20,

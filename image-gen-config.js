@@ -48,14 +48,22 @@ export function getImageGenConfig(overrides = {}) {
       // Nano banana needs only GEMINI_API_KEY to work out of the box.
       || DEFAULT_GEMINI_MODEL
     ).trim()
-    const apiKey = (process.env.IMAGE_API_KEY || process.env.GEMINI_API_KEY || '').trim()
+    // overrides.imageApiKey/geminiApiKey come from the credentials store
+    // (Settings -> ResearchCraft API keys) — process.env still wins when set.
+    const apiKey = (
+      process.env.IMAGE_API_KEY
+      || process.env.GEMINI_API_KEY
+      || overrides.imageApiKey
+      || overrides.geminiApiKey
+      || ''
+    ).trim()
     return { provider: 'gemini', model, baseUrl: GEMINI_HOST, apiKey }
   }
 
   const model = (overrides.model?.trim() || process.env.IMAGE_MODEL || '').trim()
   // Dedicated image endpoint only — do not reuse the chat LLM's base/key.
   const baseUrl = (process.env.IMAGE_BASE_URL || '').trim().replace(/\/+$/, '')
-  const apiKey = (process.env.IMAGE_API_KEY || '').trim()
+  const apiKey = (process.env.IMAGE_API_KEY || overrides.imageApiKey || '').trim()
   return { provider: 'openai', model, baseUrl, apiKey }
 }
 
@@ -64,8 +72,8 @@ export function getImageGenConfig(overrides = {}) {
  * Gemini needs only an API key (model defaults to nano banana); OpenAI needs
  * its own base URL, key, and an explicit IMAGE_MODEL.
  */
-export function imageGenConfigured() {
-  const cfg = getImageGenConfig()
+export function imageGenConfigured(overrides = {}) {
+  const cfg = getImageGenConfig(overrides)
   if (cfg.provider === 'gemini') return Boolean(cfg.apiKey)
   return Boolean(cfg.model && cfg.baseUrl && cfg.apiKey)
 }

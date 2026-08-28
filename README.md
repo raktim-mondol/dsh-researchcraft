@@ -44,27 +44,37 @@ Opens the Harness web UI (typically `http://127.0.0.1:3080`).
 - `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload
 - `workflow` tool over a ~330-template research-task catalogue
 - Academic search MCP connectors: Parallel, Firecrawl, Consensus, Scite
+- A **Settings → ResearchCraft API keys** page for all of the above — no shell env vars required
 - Default agent preset `researchcraft` (standard tools + research identity)
+
+## API keys
+
+Every credential below (`PARALLEL_API_KEY`, `FIRECRAWL_API_KEY`, `CONSENSUS_API_KEY`, `SCITE_API_KEY`, `GEMINI_API_KEY`, `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`, `RUNPOD_API_KEY`) can be set two ways:
+
+- **Settings → ResearchCraft API keys** in the DSH web UI — type a key, Save. Persisted in the profile's `settings.yaml`; a blank field always means "keep the current value", Clear removes it.
+- **Shell environment variable** — takes priority over Settings when both are set.
+
+Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`) pick up a Settings change on the very next call, no restart needed. The four MCP connectors (below) are resolved once when the `researchcraft` preset mounts, so a key changed there takes effect on the next session.
 
 ## Academic search connectors
 
 Four literature/web MCP servers are wired into the `researchcraft` preset and surface as `mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__consensus__*`, `mcp__scite__*` tools:
 
-| Connector | Env var | Without it |
+| Connector | Key | Without it |
 |---|---|---|
 | [Parallel](https://parallel.ai) — general + deep web search | `PARALLEL_API_KEY` (optional) | Works keyless, rate-limited |
 | [Firecrawl](https://firecrawl.dev) — scrape/crawl/extract | `FIRECRAWL_API_KEY` (optional) | Works keyless, rate-limited |
 | [Consensus](https://consensus.app) — evidence-backed answers over peer-reviewed papers | `CONSENSUS_API_KEY` (required) | Connector stays disabled |
 | [Scite](https://scite.ai) — Smart Citations, supporting/contrasting context | `SCITE_API_KEY` (required) | Connector stays disabled |
 
-Consensus and Scite's hosted MCP servers normally authenticate through an OAuth sign-in flow in a browser app; DSH has no interactive OAuth flow, so these connectors only activate when you supply a personal bearer token as the env var above.
+Set any of these via Settings → ResearchCraft API keys or the matching env var (see [API keys](#api-keys)). Consensus and Scite's hosted MCP servers normally authenticate through an OAuth sign-in flow in a browser app; DSH has no interactive OAuth flow, so these two connectors only activate once a personal bearer token is available from either source.
 
 ## Image generation
 
 `image_generate` writes conceptual schematics, diagrams, and illustrations to the workspace — not quantitative plots (those should be real Python/matplotlib output over real data).
 
-- **Default (Gemini "nano banana"):** set `GEMINI_API_KEY`. Defaults to model `gemini-2.5-flash-image`; override with `IMAGE_MODEL`.
-- **OpenAI-compatible Images API instead:** set `IMAGE_PROVIDER=openai`, `IMAGE_MODEL`, `IMAGE_BASE_URL`, `IMAGE_API_KEY`.
+- **Default (Gemini "nano banana"):** set `GEMINI_API_KEY` (Settings or env). Defaults to model `gemini-2.5-flash-image`; override with `IMAGE_MODEL` (env only).
+- **OpenAI-compatible Images API instead:** set `IMAGE_PROVIDER=openai`, `IMAGE_MODEL`, `IMAGE_BASE_URL` (env only) plus `IMAGE_API_KEY` (Settings or env).
 
 ## Scientific file inspection
 
@@ -86,7 +96,7 @@ The tool finds `python-helpers/.venv` automatically. Override with `RESEARCHCRAF
 
 `modal_run` and `runpod_run` offload a command to a remote CPU/GPU instance — upload inputs, run, download outputs, always terminate when done.
 
-| Tool | Env vars | Get credentials |
+| Tool | Key (Settings or env) | Get credentials |
 |---|---|---|
 | `modal_run` | `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET` | https://modal.com/settings |
 | `runpod_run` | `RUNPOD_API_KEY` | https://console.runpod.io/user/settings |
@@ -96,6 +106,17 @@ The tool finds `python-helpers/.venv` automatically. Override with `RESEARCHCRAF
 ## Workflow templates
 
 `workflow` browses (`action: "list"`, filterable by `category`/`query`) and retrieves (`action: "get"`, with `values` filling `{placeholder}` tokens) a catalogue of ~330 one-click research-task prompt templates across 22 disciplines, ported from ResearchCraft's own template library.
+
+## Development
+
+Every server-side file is plain ESM JS — no build step. The Settings page (`client/`) is the exception: it's a browser bundle (React, esbuild) served to the DSH web client, built with:
+
+```sh
+npm install   # once, for esbuild
+npm run build # after any client/ change — rebuilds lib/client.js
+```
+
+`lib/client.js` is committed so installing the plugin never needs a build step or `pnpm approve-builds` for this package itself.
 
 ## License
 

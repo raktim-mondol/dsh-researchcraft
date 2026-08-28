@@ -13,16 +13,10 @@ import { generateKeyPairSync, randomBytes } from 'node:crypto'
 
 const REST_BASE = process.env.RUNPOD_REST_API_URL ?? 'https://rest.runpod.io/v1'
 
-function apiKey() {
-  const key = process.env.RUNPOD_API_KEY?.trim()
-  if (!key) throw new Error('RUNPOD_API_KEY is not set')
-  return key
-}
-
-async function request(method, relPath, body) {
+async function request(apiKey, method, relPath, body) {
   const res = await fetch(`${REST_BASE}${relPath}`, {
     method,
-    headers: { Authorization: `Bearer ${apiKey()}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', Accept: 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
   const text = await res.text()
@@ -43,16 +37,16 @@ async function request(method, relPath, body) {
   return data
 }
 
-export async function createPod(body) {
-  return request('POST', '/pods', body)
+export async function createPod(apiKey, body) {
+  return request(apiKey, 'POST', '/pods', body)
 }
 
-export async function getPod(podId) {
-  return request('GET', `/pods/${encodeURIComponent(podId)}`)
+export async function getPod(apiKey, podId) {
+  return request(apiKey, 'GET', `/pods/${encodeURIComponent(podId)}`)
 }
 
-export async function deletePod(podId) {
-  await request('DELETE', `/pods/${encodeURIComponent(podId)}`)
+export async function deletePod(apiKey, podId) {
+  await request(apiKey, 'DELETE', `/pods/${encodeURIComponent(podId)}`)
 }
 
 function runSync(cmd, args) {
@@ -129,12 +123,12 @@ export async function sleep(ms, signal) {
 }
 
 /** Poll until the pod is RUNNING and an SSH endpoint is resolvable (or timeout). */
-export async function waitForPodSsh(podId, opts) {
+export async function waitForPodSsh(apiKey, podId, opts) {
   const deadline = Date.now() + opts.timeoutMs
   let lastStatus = ''
   while (Date.now() < deadline) {
     if (opts.signal?.aborted) throw new Error('Aborted while waiting for Runpod pod')
-    const pod = await getPod(podId)
+    const pod = await getPod(apiKey, podId)
     lastStatus = pod.desiredStatus ?? ''
     if (lastStatus === 'EXITED' || lastStatus === 'TERMINATED') {
       throw new Error(`Pod ${podId} entered terminal status ${lastStatus}`)

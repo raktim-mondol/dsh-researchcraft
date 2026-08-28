@@ -13,6 +13,7 @@ import {
   tarUploadDir,
   waitForPodSsh,
 } from './runpod-client.js'
+import { resolveEnv } from './credential-env.js'
 
 const WORKDIR = '/workspace'
 const DEFAULT_TIMEOUT_S = 600
@@ -72,9 +73,13 @@ export function applyRunpodRun(ctx) {
       },
     },
     async execute(args, exec) {
-      const key = process.env.RUNPOD_API_KEY?.trim()
+      const key = await resolveEnv('RUNPOD_API_KEY')
       if (!key) {
-        return { error: 'not_configured', text: 'Runpod is not configured. Set RUNPOD_API_KEY (get one at https://console.runpod.io/user/settings).' }
+        return {
+          error: 'not_configured',
+          text: 'Runpod is not configured. Set RUNPOD_API_KEY (Settings -> ResearchCraft API keys, or the env var — '
+            + 'get one at https://console.runpod.io/user/settings).',
+        }
       }
 
       const instanceId = args.instance ?? DEFAULT_RUNPOD_INSTANCE_ID
@@ -98,7 +103,7 @@ export function applyRunpodRun(ctx) {
         if (podId) {
           const id = podId
           podId = null
-          await deletePod(id).catch(() => {})
+          await deletePod(key, id).catch(() => {})
         }
         keys?.cleanup()
         keys = null
@@ -128,11 +133,11 @@ export function applyRunpodRun(ctx) {
           createBody.cpuFlavorIds = ['cpu3c-2-4']
         }
 
-        const created = await createPod(createBody)
+        const created = await createPod(key, createBody)
         podId = created.id
         if (!podId) throw new Error('Runpod create-pod returned no pod id')
 
-        const { ssh } = await waitForPodSsh(podId, { timeoutMs: PROVISION_TIMEOUT_S * 1000, signal })
+        const { ssh } = await waitForPodSsh(key, podId, { timeoutMs: PROVISION_TIMEOUT_S * 1000, signal })
 
         await sshExec(keys.privateKeyPath, ssh, `mkdir -p ${WORKDIR}`, { timeoutMs: 60_000, signal, retries: 15 })
 

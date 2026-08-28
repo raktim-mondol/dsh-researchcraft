@@ -2,6 +2,7 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { dirname, isAbsolute, posix, resolve } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { DEFAULT_MODAL_INSTANCE_ID, MODAL_INSTANCE_IDS, resolveModalInstance } from './modal-instances.js'
+import { resolveEnv } from './credential-env.js'
 
 const APP_NAME = 'dsh-researchcraft'
 const WORKDIR = '/workspace'
@@ -60,10 +61,16 @@ export function applyModalRun(ctx) {
       },
     },
     async execute(args, exec) {
-      const tokenId = process.env.MODAL_TOKEN_ID
-      const tokenSecret = process.env.MODAL_TOKEN_SECRET
+      const [tokenId, tokenSecret] = await Promise.all([
+        resolveEnv('MODAL_TOKEN_ID'),
+        resolveEnv('MODAL_TOKEN_SECRET'),
+      ])
       if (!tokenId || !tokenSecret) {
-        return { error: 'not_configured', text: 'Modal is not configured. Set MODAL_TOKEN_ID and MODAL_TOKEN_SECRET (get them at https://modal.com/settings).' }
+        return {
+          error: 'not_configured',
+          text: 'Modal is not configured. Set MODAL_TOKEN_ID and MODAL_TOKEN_SECRET '
+            + '(Settings -> ResearchCraft API keys, or the env vars — get them at https://modal.com/settings).',
+        }
       }
 
       const instanceId = args.instance ?? DEFAULT_MODAL_INSTANCE_ID
