@@ -1,5 +1,10 @@
 import { applyNotebook } from './notebook.js'
 import { applyImageGenerate } from './image-generate.js'
+import { applySciInspect } from './sci-inspect.js'
+import { applyLatexCompile } from './latex-compile.js'
+import { applyModalRun } from './modal-run.js'
+import { applyRunpodRun } from './runpod-run.js'
+import { applyWorkflows } from './workflows.js'
 import { RESEARCHCRAFT_PROMPT } from './prompt.js'
 import { seed } from './seed.js'
 
@@ -15,4 +20,9 @@ export function apply(ctx) {
   })
   applyNotebook(ctx)
   applyImageGenerate(ctx)
+  applySciInspect(ctx)
+  applyLatexCompile(ctx)
+  applyModalRun(ctx)
+  applyRunpodRun(ctx)
+  applyWorkflows(ctx)
 }

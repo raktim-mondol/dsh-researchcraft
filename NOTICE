@@ -8,5 +8,11 @@ catalogue, lab notebook, and specialist subagent briefs as a DeepSeek Harness
 Scientific skills are seeded from the open-source catalogue
 `K-Dense-AI/scientific-agent-skills` (MIT License).
 
+The `python-helpers/` scientific-file-format decoders (chemistry, structure,
+mass spec, arrays, imaging, AnnData) and the `workflows.json` research-task
+template catalogue are adapted from the ResearchCraft codebase (MIT), a
+white-labeled fork of K-Dense BYOK — see
+https://github.com/K-Dense-AI/k-dense-byok.
+
 ResearchCraft branding and content © ResearchCraft.
 Site: https://researchcraft.dev

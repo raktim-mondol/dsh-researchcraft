@@ -1,0 +1,23 @@
+[project]
+name = "researchcraft-helpers"
+version = "0.1.0"
+description = "Python decoders the ResearchCraft backend shells out to for file previews"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "anndata",
+    "h5py",
+    "rdkit",
+    "gemmi",
+    "pyteomics",
+    "lxml",
+    "psims",
+    "pyarrow",
+    "netCDF4",
+    "pydicom",
+    "nibabel",
+    "tifffile",
+    "pillow",
+]

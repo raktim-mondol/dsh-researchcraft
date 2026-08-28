@@ -1,6 +1,7 @@
-import { appendFileSync, mkdirSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import { notebookToMarkdown } from './notebook-export.js'
 
 const TYPES = ['hypothesis', 'method', 'observation', 'decision', 'note']
 const STANCES = ['supports', 'refutes', 'neutral']
@@ -44,6 +45,9 @@ function readEntries(file) {
 }
 
 function render(value) {
+  if (value && typeof value.path === 'string' && typeof value.entries === 'number') {
+    return [{ type: 'text', text: `wrote lab notebook to ${value.path} (${value.entries} entries)` }]
+  }
   return [{ type: 'text', text: JSON.stringify(value, null, 2) }]
 }
 
@@ -57,12 +61,17 @@ export function applyNotebook(ctx) {
       'Attach artifacts (workspace-relative paths) for figures, tables, and scripts.',
       'Every log returns an id. Thread later results with relatesTo and stance. Correct an earlier entry by logging a new one with supersedes.',
       'Use action "read" to recall ids and earlier findings.',
+      'Use action "export" to render the session\'s entries to a readable Markdown lab record and write it into the workspace.',
     ].join(' '),
     parameters: {
       action: {
         type: 'string',
-        enum: ['log', 'read'],
-        description: 'log appends an entry; read returns this session\'s entries.',
+        enum: ['log', 'read', 'export'],
+        description: 'log appends an entry; read returns this session\'s entries; export renders them to a Markdown file.',
+      },
+      export_path: {
+        type: 'string',
+        description: 'Workspace-relative output path for action=export (default lab-notebook.md).',
       },
       type: {
         type: 'string',
@@ -108,6 +117,18 @@ export function applyNotebook(ctx) {
       if (action === 'read') {
         const entries = readEntries(file)
         return { file, count: entries.length, entries }
+      }
+      if (action === 'export') {
+        const entries = readEntries(file)
+        const markdown = notebookToMarkdown(entries, { sessionId: sessionKey(exec) })
+        const rel = typeof args.export_path === 'string' && args.export_path.trim()
+          ? args.export_path.trim()
+          : 'lab-notebook.md'
+        const root = workspaceRoot(exec)
+        const out = isAbsolute(rel) ? rel : resolve(root, rel)
+        mkdirSync(dirname(out), { recursive: true })
+        writeFileSync(out, markdown, 'utf8')
+        return { path: rel, entries: entries.length }
       }
 
       const title = typeof args.title === 'string' ? args.title.trim() : ''

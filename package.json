@@ -8,14 +8,25 @@
   "files": [
     "index.js",
     "notebook.js",
+    "notebook-export.js",
     "image-generate.js",
     "image-gen-client.js",
     "image-gen-config.js",
+    "sci-inspect.js",
+    "latex-compile.js",
+    "modal-run.js",
+    "modal-instances.js",
+    "runpod-run.js",
+    "runpod-client.js",
+    "runpod-instances.js",
+    "workflows.js",
+    "workflows.json",
     "prompt.js",
     "seed.js",
     "cordis.patch.yml",
     "presets",
     "skills",
+    "python-helpers",
     "README.md",
     "LICENSE",
     "NOTICE"
@@ -35,7 +46,8 @@
   },
   "dependencies": {
     "@deepseek-ai/dsh-tools": "0.1.1-rc.2",
-    "@deepseek-ai/dsh-mcp-client": "0.1.1-rc.2"
+    "@deepseek-ai/dsh-mcp-client": "0.1.1-rc.2",
+    "modal": "^0.8.2"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": ">=4.0.0",
