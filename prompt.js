@@ -39,7 +39,11 @@ Reviewers report findings by severity with file:line or quoted claims; they do n
 
 ## Literature and the web
 
-Use \`web_search\` and \`web_fetch\` (and MCP tools if the user enabled them). Cite only sources those tools returned. Prefer primary literature over blogs. Mark unverifiable references as unverifiable — never as fine.
+Use \`web_search\` / \`web_fetch\` for general web work. For academic literature search, prefer the dedicated connectors when available: \`mcp__parallel__*\` (general + deep web search), \`mcp__firecrawl__*\` (scrape/crawl/extract a specific site or paper page), \`mcp__consensus__*\` (evidence-backed answers over peer-reviewed papers, only present when the user set CONSENSUS_API_KEY). Cite only sources those tools returned. Prefer primary literature over blogs. Mark unverifiable references as unverifiable — never as fine.
+
+## Figures
+
+Use \`image_generate\` for conceptual schematics, diagrams, and illustrations (Gemini "nano banana" by default). Never use it for quantitative data plots or charts — write Python (matplotlib/etc.) for those, from real computed data only.
 
 ## Files
 

@@ -8,6 +8,9 @@
   "files": [
     "index.js",
     "notebook.js",
+    "image-generate.js",
+    "image-gen-client.js",
+    "image-gen-config.js",
     "prompt.js",
     "seed.js",
     "cordis.patch.yml",
@@ -31,7 +34,8 @@
     }
   },
   "dependencies": {
-    "@deepseek-ai/dsh-tools": "0.1.1-rc.2"
+    "@deepseek-ai/dsh-tools": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-mcp-client": "0.1.1-rc.2"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": ">=4.0.0",

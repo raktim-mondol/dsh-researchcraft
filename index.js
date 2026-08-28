@@ -1,4 +1,5 @@
 import { applyNotebook } from './notebook.js'
+import { applyImageGenerate } from './image-generate.js'
 import { RESEARCHCRAFT_PROMPT } from './prompt.js'
 import { seed } from './seed.js'
 
@@ -13,4 +14,5 @@ export function apply(ctx) {
     text: RESEARCHCRAFT_PROMPT,
   })
   applyNotebook(ctx)
+  applyImageGenerate(ctx)
 }

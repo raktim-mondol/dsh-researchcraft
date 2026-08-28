@@ -259,3 +259,46 @@
   config:
     fetch: true
     searchTimeoutMs: 60000
+
+# ── literature & academic search MCP connectors ─────────────────────────────
+
+# Each instance is one `mcp-client` plugin row (per-server, like tool-subagent
+# above) — it registers only into the shared `tools` registry and provides no
+# service of its own, so — like tool-web — it needs no realm: every session on
+# this preset resolves the same connected server. Tools surface as
+# `mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__consensus__*`.
+#
+# Parallel and Firecrawl work keyless out of the box (rate-limited); setting
+# PARALLEL_API_KEY / FIRECRAWL_API_KEY raises the limit. A connection failure
+# never blocks agent startup (`failOnStartupError` defaults false) — the
+# server just retries in the background.
+- id: mcp-parallel
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: parallel
+    transport: streamable-http
+    url: https://search.parallel.ai/mcp
+    headers:
+      Authorization: !!js (process.env.PARALLEL_API_KEY && ('Bearer ' + process.env.PARALLEL_API_KEY)) || ''
+
+- id: mcp-firecrawl
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: firecrawl
+    transport: streamable-http
+    url: !!js (process.env.FIRECRAWL_API_KEY && ('https://mcp.firecrawl.dev/' + encodeURIComponent(process.env.FIRECRAWL_API_KEY) + '/v2/mcp')) || 'https://mcp.firecrawl.dev/v2/mcp'
+
+# Consensus's hosted MCP server authenticates via OAuth sign-in in a browser
+# app; DSH has no interactive OAuth flow, so this connector only activates
+# when a personal bearer token is available as CONSENSUS_API_KEY — stays
+# disabled (not merely keyless) otherwise, since an unauthenticated attempt
+# would just spin in `mcp-client`'s reconnect loop.
+- id: mcp-consensus
+  name: '@deepseek-ai/dsh-mcp-client'
+  disabled: !!js (process.env.CONSENSUS_API_KEY ?? '') === ''
+  config:
+    serverName: consensus
+    transport: streamable-http
+    url: https://mcp.consensus.app/mcp
+    headers:
+      Authorization: !!js (process.env.CONSENSUS_API_KEY && ('Bearer ' + process.env.CONSENSUS_API_KEY)) || ''
