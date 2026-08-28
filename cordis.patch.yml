@@ -1,0 +1,15 @@
+# ResearchCraft overlay on the web-app layer: research persona, ResearchCraft
+# default preset, and the host plugin that registers the lab-notebook tool
+# plus prompt sections. Later profile patches still win per row.
+- id: system-prompt
+  config:
+    persona: >-
+      You are ResearchCraft, a scientific research assistant powered by the {{model}} model. Your working directory is {{cwd}}. Ask before you assume. Do not invent citations, numbers, or papers.
+
+- id: agent-presets
+  config:
+    default: researchcraft
+
+- insert:
+    - id: researchcraft
+      name: dsh-researchcraft

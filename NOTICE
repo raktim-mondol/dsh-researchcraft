@@ -1,0 +1,12 @@
+dsh-researchcraft
+==================
+
+This plugin packages ResearchCraft's research persona, scientific skills
+catalogue, lab notebook, and specialist subagent briefs as a DeepSeek Harness
+(DSH) profile bundle.
+
+Scientific skills are seeded from the open-source catalogue
+`K-Dense-AI/scientific-agent-skills` (MIT License).
+
+ResearchCraft branding and content © ResearchCraft.
+Site: https://researchcraft.dev

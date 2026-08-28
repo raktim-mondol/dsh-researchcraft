@@ -1,0 +1,45 @@
+{
+  "name": "dsh-researchcraft",
+  "version": "0.1.0",
+  "description": "ResearchCraft as a DeepSeek Harness profile: DSH web UI and agent, scientific skills, lab notebook, specialist subagents.",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "notebook.js",
+    "prompt.js",
+    "seed.js",
+    "cordis.patch.yml",
+    "presets",
+    "skills",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raktim-mondol/dsh-researchcraft.git"
+  },
+  "homepage": "https://github.com/raktim-mondol/dsh-researchcraft#readme",
+  "bugs": {
+    "url": "https://github.com/raktim-mondol/dsh-researchcraft/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-tools": "0.1.1-rc.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.0",
+    "@deepseek-ai/dsh-system-prompt": "*"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "researchcraft"
+  ]
+}
