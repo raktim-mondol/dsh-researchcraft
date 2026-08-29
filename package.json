@@ -8,6 +8,7 @@
   "exports": {
     ".": "./index.js",
     "./mcp-connectors": "./mcp-connectors.js",
+    "./prompt-section": "./prompt-section.js",
     "./client": "./lib/client.js",
     "./package.json": "./package.json"
   },
@@ -30,6 +31,7 @@
     "credential-env.js",
     "settings-keys.js",
     "mcp-connectors.js",
+    "prompt-section.js",
     "prompt.js",
     "seed.js",
     "cordis.patch.yml",

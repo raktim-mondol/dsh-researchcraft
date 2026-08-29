@@ -33,6 +33,15 @@
   config:
     maxBytes: 65536
 
+# The longer ResearchCraft system-prompt section (notebook/subagent/MCP/tool
+# guidance) — scoped to this preset the same way `persona` above is: rows
+# registered here are visible only to sessions joined to this preset's
+# standing mount. Previously called from the plugin's bundle-level apply()
+# in index.js, which made it global — every session on every preset got the
+# ResearchCraft prompt even outside this preset. See prompt-section.js.
+- id: researchcraft-prompt
+  name: dsh-researchcraft/prompt-section
+
 # ── shell ───────────────────────────────────────────────────────────────────
 
 # `shell-env` stays in the HOST composition: `apps/cli/src/web.ts` injects it to

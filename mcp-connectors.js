@@ -3,10 +3,15 @@
  * mounted programmatically instead of as static cordis.yml rows so each
  * server's auth can come from the `dsh-researchcraft-keys` settings store
  * (Settings -> ResearchCraft API keys) as well as the matching env var.
- * Resolved once when the `researchcraft` preset mounts — a key entered in
- * Settings takes effect on the next session, not mid-session
- * (`dsh-mcp-client`'s own config is fixed per instance; env vars have the
- * same restart requirement today).
+ * Resolved once when the `researchcraft` preset first mounts. That mount is
+ * a STANDING composition shared by every session naming the preset for the
+ * life of the running `dsh` process (see @deepseek-ai/dsh-agent-presets) —
+ * a new chat session does NOT get a fresh mount, so a key entered or
+ * changed in Settings only reaches these connectors after `dsh` itself is
+ * stopped and restarted, not merely after starting a new session (verified
+ * live: a freshly-saved key was still invisible to a brand-new session on
+ * the correct preset). `dsh-mcp-client`'s own config is fixed per instance,
+ * and env vars have the same restart requirement.
  *
  * Parallel and Firecrawl work keyless (rate-limited); Consensus and Scite
  * authenticate via OAuth sign-in in their own browser apps normally — DSH has

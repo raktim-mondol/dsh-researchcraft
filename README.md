@@ -32,20 +32,29 @@ dsh --profile researchcraft
 
 Opens the Harness web UI (typically `http://127.0.0.1:3080`).
 
+**Select the ResearchCraft agent preset for each chat.** Installing this plugin adds a *ResearchCraft* option to the agent-preset picker — it does not replace whatever your default preset already is (commonly "Standard mode" / "PTC mode"). A new chat starts on that default, not on ResearchCraft, until you pick it explicitly:
+
+1. Start a new session.
+2. Click the preset selector at the top of the message box (reads "PTC mode", "Standard mode", or similar by default).
+3. Choose **ResearchCraft** from the list.
+
+The persona, the longer research system prompt (notebook discipline, specialist roster, MCP connector guidance, …), and the four academic search connectors (`mcp__parallel__*` etc.) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset.
+
+The preset picker remembers your last choice per browser, so you'll typically only need to do this once.
+
 ## What it adds
 
-- ResearchCraft persona and research system prompt
-- Scientific skills catalogue (`scientific-agent-skills`, or `RESEARCHCRAFT_SKILLS_DIR`)
-- `notebook` tool — log, read, and export a living lab notebook (JSONL under `<cwd>/.dsh/notebook/`)
-- Specialist briefs (code-reviewer, literature-researcher, …) for the DSH `subagent` tool
-- `image_generate` tool for conceptual scientific figures (Gemini "nano banana" by default)
-- `sci_inspect` tool for scientific file formats (chemistry, structure, mass spec, arrays, imaging, AnnData)
-- `latex_compile` tool (`.tex` → PDF, bibtex/biber-aware)
-- `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload
-- `workflow` tool over a ~330-template research-task catalogue
-- Academic search MCP connectors: Parallel, Firecrawl, Consensus, Scite
+- **ResearchCraft agent preset** — persona, research system prompt (notebook discipline, specialist roster, connector guidance), standard coding tools, and the 4 academic MCP connectors below. Select it explicitly per chat — see [Run](#run).
+- Scientific skills catalogue (`scientific-agent-skills`, or `RESEARCHCRAFT_SKILLS_DIR`) — available on every preset
+- `notebook` tool — log, read, and export a living lab notebook (JSONL under `<cwd>/.dsh/notebook/`) — every preset
+- Specialist briefs (code-reviewer, literature-researcher, …) for the DSH `subagent` tool — every preset
+- `image_generate` tool for conceptual scientific figures (Gemini "nano banana" by default) — every preset
+- `sci_inspect` tool for scientific file formats (chemistry, structure, mass spec, arrays, imaging, AnnData) — every preset
+- `latex_compile` tool (`.tex` → PDF, bibtex/biber-aware) — every preset
+- `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload — every preset
+- `workflow` tool over a ~330-template research-task catalogue — every preset
+- Academic search MCP connectors: Parallel, Firecrawl, Consensus, Scite — **ResearchCraft preset only**
 - A **Settings → ResearchCraft API keys** page for all of the above — no shell env vars required
-- Default agent preset `researchcraft` (standard tools + research identity)
 
 ## API keys
 
@@ -54,7 +63,11 @@ Every credential below (`PARALLEL_API_KEY`, `FIRECRAWL_API_KEY`, `CONSENSUS_API_
 - **Settings → ResearchCraft API keys** in the DSH web UI — type a key, Save. Persisted in the profile's `settings.yaml`; a blank field always means "keep the current value", Clear removes it.
 - **Shell environment variable** — takes priority over Settings when both are set.
 
-Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`) pick up a Settings change on the very next call, no restart needed. The four MCP connectors (below) are resolved once when the `researchcraft` preset mounts, so a key changed there takes effect on the next session.
+Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`) pick up a Settings change on the very next call, no restart needed.
+
+The four MCP connectors (below) are different: the `researchcraft` agent preset mounts once as a standing composition shared by every chat session for the life of the running `dsh` process, so a key change only reaches them after you **stop and restart `dsh` itself** — a new chat session on the same running process is not enough.
+
+**Also make sure the chat session is actually on the ResearchCraft preset.** The connectors are wired into the `researchcraft` agent preset only; a session left on the default preset (Standard/PTC/etc.) has no `mcp__parallel__*`/`mcp__firecrawl__*`/`mcp__consensus__*`/`mcp__scite__*` tools at all, and calling one fails with `tools[name] is not a function`. Check the preset selector next to the session title (top of the message box for a new chat, top-left of an existing one) reads "ResearchCraft" before asking the agent to search.
 
 ## Academic search connectors
 
