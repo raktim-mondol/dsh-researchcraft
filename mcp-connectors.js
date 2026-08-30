@@ -13,15 +13,21 @@
  * the correct preset). `dsh-mcp-client`'s own config is fixed per instance,
  * and env vars have the same restart requirement.
  *
- * Parallel and Firecrawl work keyless (rate-limited); Scite authenticates via
- * OAuth sign-in in its own browser app normally — DSH has no interactive
- * OAuth flow, so it only mounts when a personal bearer token is available.
+ * Parallel and Firecrawl work keyless (rate-limited). Scite requires a key:
+ * its hosted MCP server (https://api.scite.ai/mcp) has three access paths
+ * (see https://docs.scite.ai/mcp) — the first-party ChatGPT/Claude
+ * plugin/connector (OAuth, those platforms only), an interactive MCP client
+ * doing OAuth 2.1 + PKCE (DSH has no such flow), and the documented
+ * programmatic path: an `mcp`-scoped API key from the API Console
+ * (scite.ai/users/me/api), sent as a bearer token to `/mcp` with no token
+ * exchange. That third path is what SCITE_API_KEY uses below — it's Scite's
+ * own first-class non-interactive credential, not a workaround.
  *
- * Consensus is NOT here: it moved off its MCP server (which needed the same
- * OAuth workaround) to a plain REST API with `x-api-key` auth, so it's now
- * `consensus-search.js` — a native per-call tool, not a standing MCP mount,
- * which also means a Settings-changed CONSENSUS_API_KEY takes effect on the
- * next call rather than needing a restart. See presets/researchcraft/agent.cordis.yml.
+ * Consensus is NOT here: it moved off its MCP server to a plain REST API
+ * with `x-api-key` auth, so it's now `consensus-search.js` — a native
+ * per-call tool, not a standing MCP mount, which also means a
+ * Settings-changed CONSENSUS_API_KEY takes effect on the next call rather
+ * than needing a restart. See presets/researchcraft/agent.cordis.yml.
  */
 import * as McpClient from '@deepseek-ai/dsh-mcp-client'
 import { resolveEnv } from './credential-env.js'

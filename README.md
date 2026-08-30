@@ -78,11 +78,11 @@ Three literature/web MCP servers are wired into the `researchcraft` preset and s
 |---|---|---|
 | [Parallel](https://parallel.ai) — general + deep web search | `PARALLEL_API_KEY` (optional) | Works keyless, rate-limited |
 | [Firecrawl](https://firecrawl.dev) — scrape/crawl/extract | `FIRECRAWL_API_KEY` (optional) | Works keyless, rate-limited |
-| [Scite](https://scite.ai) — Smart Citations, supporting/contrasting context | `SCITE_API_KEY` (required) | Connector stays disabled |
+| [Scite](https://scite.ai) — Smart Citations, retraction/correction checks, evidence datasets (patents, clinical trials, grants, drug safety, …) | `SCITE_API_KEY` (required) | Connector stays disabled |
 
 [Consensus](https://consensus.app) is a native `consensus_search` tool (not an MCP connector) over its `GET /v1/search` REST API — plain `x-api-key` auth, no OAuth. Requires `CONSENSUS_API_KEY` (required — the tool returns a clear error, not a disabled connector, when unset). Supports the API's full filter set: study type, year/month range, sample size, journal quartile (SJR), citation count, study duration, domain, country, publisher, open-access/preprint/human/controlled/clinical-guideline flags, and pagination.
 
-Set any of these via Settings → ResearchCraft API keys or the matching env var (see [API keys](#api-keys)). Scite's hosted MCP server normally authenticates through an OAuth sign-in flow in a browser app; DSH has no interactive OAuth flow, so it only activates once a personal bearer token is available from either source. Consensus has a proper `x-api-key`-based REST API instead, so `consensus_search` needs no such workaround.
+Set any of these via Settings → ResearchCraft API keys or the matching env var (see [API keys](#api-keys)). `SCITE_API_KEY` is an `mcp`-scoped key from [scite.ai/users/me/api](https://scite.ai/users/me/api) — Scite's own documented non-interactive path for MCP clients, sent as a bearer token to `https://api.scite.ai/mcp` (no OAuth or token exchange). Scite also offers an OAuth flow, but only for its first-party ChatGPT/Claude plugin and other interactive clients — not relevant here.
 
 ## Image generation
 
