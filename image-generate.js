@@ -6,8 +6,7 @@ import { getImageGenConfig, imageGenConfigured } from './image-gen-config.js'
 import { resolveEnv } from './credential-env.js'
 
 function workspaceRoot(exec) {
-  const session = exec.agent?.session
-  const cwd = session?.cwd ?? session?.workingDirectory
+  const cwd = exec.agent?.session?.header?.cwd
   if (typeof cwd === 'string' && cwd.length > 0) return cwd
   return process.cwd()
 }
@@ -26,8 +25,10 @@ export function applyImageGenerate(ctx) {
     name: 'image_generate',
     description: [
       'Generate a conceptual scientific schematic, diagram, or illustration and write it to the workspace.',
-      'Uses Gemini image generation (gemini-2.5-flash-image, "nano banana") by default — needs GEMINI_API_KEY.',
-      'Set IMAGE_MODEL/IMAGE_PROVIDER=openai plus IMAGE_BASE_URL/IMAGE_API_KEY to use an OpenAI-compatible Images API instead.',
+      'Uses Gemini image generation (gemini-2.5-flash-image "nano banana" by default; gemini-3.1-flash-image "nano',
+      'banana 2" and gemini-3-pro-image "nano banana pro" also available) — needs GEMINI_API_KEY. Model is set via',
+      'Settings -> ResearchCraft API keys, the IMAGE_MODEL env var, or the model arg here (highest priority).',
+      'Set IMAGE_PROVIDER=openai plus IMAGE_BASE_URL/IMAGE_API_KEY to use an OpenAI-compatible Images API instead.',
       'Do not use this for quantitative data plots or charts — write Python (matplotlib/etc.) for those.',
     ].join(' '),
     parameters: {
@@ -60,13 +61,15 @@ export function applyImageGenerate(ctx) {
       },
     },
     async execute(args, exec) {
-      const [geminiApiKey, imageApiKey] = await Promise.all([
+      const [geminiApiKey, imageApiKey, settingsModel] = await Promise.all([
         resolveEnv('GEMINI_API_KEY'),
         resolveEnv('IMAGE_API_KEY'),
+        resolveEnv('IMAGE_MODEL'),
       ])
       const keyOverrides = { geminiApiKey, imageApiKey }
+      const model = args.model?.trim() || settingsModel
 
-      if (!imageGenConfigured(keyOverrides) && !args.model?.trim()) {
+      if (!imageGenConfigured(keyOverrides) && !model) {
         return {
           ok: false,
           error: 'image_generate is not configured. Set GEMINI_API_KEY (Settings -> ResearchCraft API keys, or the '
@@ -74,7 +77,7 @@ export function applyImageGenerate(ctx) {
             + 'OpenAI-compatible Images API.',
         }
       }
-      const cfg = getImageGenConfig({ model: args.model, provider: args.provider, ...keyOverrides })
+      const cfg = getImageGenConfig({ model, provider: args.provider, ...keyOverrides })
       if (!cfg.apiKey || !cfg.model) {
         return { ok: false, error: 'an image model and API key are required (see the tool description)' }
       }

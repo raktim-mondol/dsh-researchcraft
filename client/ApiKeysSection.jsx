@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react'
 
+const IMAGE_MODEL_OPTIONS = [
+  { value: 'gemini-2.5-flash-image', label: 'gemini-2.5-flash-image — nano banana' },
+  { value: 'gemini-3.1-flash-image', label: 'gemini-3.1-flash-image — nano banana 2' },
+  { value: 'gemini-3-pro-image', label: 'gemini-3-pro-image — nano banana pro' },
+]
+const CUSTOM_MODEL = '__custom__'
+
 /** The settings fields this section manages, grouped for display. */
 const KEYS = [
   { field: 'PARALLEL_API_KEY', label: 'Parallel', group: 'Literature search', hint: 'Optional — raises the keyless rate limit.' },
   { field: 'FIRECRAWL_API_KEY', label: 'Firecrawl', group: 'Literature search', hint: 'Optional — raises the keyless rate limit.' },
   { field: 'CONSENSUS_API_KEY', label: 'Consensus', group: 'Literature search', hint: 'Required to enable this connector.' },
   { field: 'SCITE_API_KEY', label: 'Scite', group: 'Literature search', hint: 'Required to enable this connector.' },
-  { field: 'GEMINI_API_KEY', label: 'Gemini (nano banana)', group: 'Image generation', hint: 'Enables the image_generate tool.' },
+  { field: 'GEMINI_API_KEY', label: 'Gemini', group: 'Image generation', hint: 'Enables the image_generate tool.' },
+  { field: 'IMAGE_MODEL', label: 'Image model', group: 'Image generation', type: 'select', options: IMAGE_MODEL_OPTIONS, hint: 'Which Gemini model image_generate uses by default. Defaults to nano banana if unset.' },
   { field: 'MODAL_TOKEN_ID', label: 'Modal — token ID', group: 'Remote compute', hint: 'From modal.com/settings.' },
   { field: 'MODAL_TOKEN_SECRET', label: 'Modal — token secret', group: 'Remote compute', hint: 'From modal.com/settings.' },
   { field: 'RUNPOD_API_KEY', label: 'Runpod', group: 'Remote compute', hint: 'From console.runpod.io/user/settings.' },
@@ -14,13 +22,150 @@ const KEYS = [
 
 const GROUPS = [...new Set(KEYS.map((k) => k.group))]
 
+const errorText = { color: 'var(--color-danger, #c0392b)', margin: 0, fontSize: '0.85em' }
+const hintText = { margin: 0, opacity: 0.6, fontSize: '0.8em' }
+const fieldLabel = { fontSize: '0.85em' }
+
+/** A non-secret select field: shows and applies its current value immediately on change. */
+function SelectField({ k, scope, snapshot, writable }) {
+  const stored = snapshot.value?.[k.field] || ''
+  const known = k.options.some((o) => o.value === stored)
+  const [customMode, setCustomMode] = useState(Boolean(stored) && !known)
+  const [customDraft, setCustomDraft] = useState(known ? '' : stored)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState()
+
+  const apply = async (value) => {
+    setBusy(true)
+    setError(undefined)
+    try {
+      if (value) await scope.set(k.field, value)
+      else await scope.unset(k.field)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const onSelectChange = (e) => {
+    const value = e.target.value
+    if (value === CUSTOM_MODEL) {
+      setCustomMode(true)
+      return
+    }
+    setCustomMode(false)
+    apply(value)
+  }
+
+  return (
+    <div key={k.field} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+      <label style={fieldLabel}>
+        {k.label}
+        {' — '}
+        {stored || `default (${k.options[0].value})`}
+      </label>
+      <select
+        value={customMode ? CUSTOM_MODEL : (stored || k.options[0].value)}
+        disabled={busy || !writable}
+        onChange={onSelectChange}
+        style={{ flex: 1 }}
+      >
+        {k.options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+        <option value={CUSTOM_MODEL}>Custom…</option>
+      </select>
+      {customMode && (
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <input
+            type="text"
+            autoComplete="off"
+            placeholder="model id, e.g. gemini-2.0-flash-exp"
+            value={customDraft}
+            disabled={busy || !writable}
+            onChange={(e) => setCustomDraft(e.target.value)}
+            style={{ flex: 1 }}
+          />
+          <button type="button" disabled={busy || !writable || !customDraft.trim()} onClick={() => apply(customDraft.trim())}>
+            Apply
+          </button>
+        </div>
+      )}
+      {error && <p style={errorText}>{error}</p>}
+      {k.hint && <p style={hintText}>{k.hint}</p>}
+    </div>
+  )
+}
+
+/** A secret field: write-only draft input, never populated from the stored value. */
+function SecretField({ k, scope, snapshot, writable }) {
+  const [draft, setDraft] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState()
+  const configured = Boolean(snapshot.value?.[k.field])
+
+  const save = async () => {
+    const value = draft.trim()
+    if (!value) return
+    setBusy(true)
+    setError(undefined)
+    try {
+      await scope.set(k.field, value)
+      setDraft('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const clear = async () => {
+    setBusy(true)
+    setError(undefined)
+    try {
+      await scope.unset(k.field)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div key={k.field} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+      <label style={fieldLabel}>
+        {k.label}
+        {' — '}
+        {configured ? 'configured' : 'not set'}
+      </label>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <input
+          type="password"
+          autoComplete="off"
+          placeholder={configured ? 'leave blank to keep' : 'not set'}
+          value={draft}
+          disabled={busy || !writable}
+          onChange={(e) => setDraft(e.target.value)}
+          style={{ flex: 1 }}
+        />
+        <button type="button" disabled={busy || !writable || !draft.trim()} onClick={save}>
+          Save
+        </button>
+        <button type="button" disabled={busy || !writable || !configured} onClick={clear}>
+          Clear
+        </button>
+      </div>
+      {error && <p style={errorText}>{error}</p>}
+      {k.hint && <p style={hintText}>{k.hint}</p>}
+    </div>
+  )
+}
+
 /** Props supplied by our own client/index.js registration: { scope }. */
 export function ApiKeysSection(props) {
   const { scope } = props
   const [snapshot, setSnapshot] = useState(() => scope.getSnapshot())
-  const [drafts, setDrafts] = useState({})
-  const [busy, setBusy] = useState({})
-  const [errors, setErrors] = useState({})
 
   useEffect(() => scope.subscribe(() => setSnapshot(scope.getSnapshot())), [scope])
 
@@ -43,34 +188,6 @@ export function ApiKeysSection(props) {
   }
 
   const writable = snapshot.writable !== false
-  const isConfigured = (field) => Boolean(snapshot.value?.[field])
-
-  const save = async (field) => {
-    const value = (drafts[field] ?? '').trim()
-    if (!value) return
-    setBusy((b) => ({ ...b, [field]: true }))
-    setErrors((e) => ({ ...e, [field]: undefined }))
-    try {
-      await scope.set(field, value)
-      setDrafts((d) => ({ ...d, [field]: '' }))
-    } catch (error) {
-      setErrors((e) => ({ ...e, [field]: error instanceof Error ? error.message : String(error) }))
-    } finally {
-      setBusy((b) => ({ ...b, [field]: false }))
-    }
-  }
-
-  const clear = async (field) => {
-    setBusy((b) => ({ ...b, [field]: true }))
-    setErrors((e) => ({ ...e, [field]: undefined }))
-    try {
-      await scope.unset(field)
-    } catch (error) {
-      setErrors((e) => ({ ...e, [field]: error instanceof Error ? error.message : String(error) }))
-    } finally {
-      setBusy((b) => ({ ...b, [field]: false }))
-    }
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '4px 0' }}>
@@ -79,52 +196,16 @@ export function ApiKeysSection(props) {
         A key set here is used only when the matching environment variable isn't already set when DSH starts.
       </p>
       {!writable && (
-        <p style={{ color: 'var(--color-danger, #c0392b)', margin: 0, fontSize: '0.85em' }}>
-          Settings storage is read-only in this session.
-        </p>
+        <p style={errorText}>Settings storage is read-only in this session.</p>
       )}
       {GROUPS.map((group) => (
         <div key={group} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <h3 style={{ margin: 0, fontSize: '0.95em' }}>{group}</h3>
-          {KEYS.filter((k) => k.group === group).map((k) => {
-            const configured = isConfigured(k.field)
-            return (
-              <div key={k.field} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontSize: '0.85em' }}>
-                  {k.label}
-                  {' — '}
-                  {configured ? 'configured' : 'not set'}
-                </label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input
-                    type="password"
-                    autoComplete="off"
-                    placeholder={configured ? 'leave blank to keep' : 'not set'}
-                    value={drafts[k.field] ?? ''}
-                    disabled={Boolean(busy[k.field]) || !writable}
-                    onChange={(e) => setDrafts((d) => ({ ...d, [k.field]: e.target.value }))}
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    disabled={Boolean(busy[k.field]) || !writable || !(drafts[k.field]?.trim())}
-                    onClick={() => save(k.field)}
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    disabled={Boolean(busy[k.field]) || !writable || !configured}
-                    onClick={() => clear(k.field)}
-                  >
-                    Clear
-                  </button>
-                </div>
-                {errors[k.field] && <p style={{ color: 'var(--color-danger, #c0392b)', margin: 0, fontSize: '0.85em' }}>{errors[k.field]}</p>}
-                {k.hint && <p style={{ margin: 0, opacity: 0.6, fontSize: '0.8em' }}>{k.hint}</p>}
-              </div>
-            )
-          })}
+          {KEYS.filter((k) => k.group === group).map((k) => (
+            k.type === 'select'
+              ? <SelectField key={k.field} k={k} scope={scope} snapshot={snapshot} writable={writable} />
+              : <SecretField key={k.field} k={k} scope={scope} snapshot={snapshot} writable={writable} />
+          ))}
         </div>
       ))}
     </div>

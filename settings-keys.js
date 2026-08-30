@@ -1,8 +1,10 @@
 /**
  * The `dsh-researchcraft-keys` settings namespace: API keys for the MCP
- * connectors, image generation, and remote-compute tools, editable from
- * Settings -> ResearchCraft API keys. Registered at plugin load; resolveEnv()
- * (credential-env.js) reads the live value on every call, so a key entered
+ * connectors, image generation, and remote-compute tools, plus a couple of
+ * non-secret preferences (IMAGE_MODEL) that ride along in the same
+ * namespace/UI section for convenience — editable from Settings ->
+ * ResearchCraft API keys. Registered at plugin load; resolveEnv()
+ * (credential-env.js) reads the live value on every call, so a value entered
  * in Settings works without a restart — process.env still wins when set.
  *
  * `ctx.remote.credentials` (the dedicated secret-credential wire seam) does
@@ -31,6 +33,7 @@ export const KEY_FIELDS = [
   'CONSENSUS_API_KEY',
   'SCITE_API_KEY',
   'GEMINI_API_KEY',
+  'IMAGE_MODEL',
   'MODAL_TOKEN_ID',
   'MODAL_TOKEN_SECRET',
   'RUNPOD_API_KEY',

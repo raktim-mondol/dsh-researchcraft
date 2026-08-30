@@ -22,8 +22,7 @@ const PROVISION_TIMEOUT_S = 300
 const MAX_OUTPUT_CHARS = 16000
 
 function workspaceRoot(exec) {
-  const session = exec.agent?.session
-  const cwd = session?.cwd ?? session?.workingDirectory
+  const cwd = exec.agent?.session?.header?.cwd
   if (typeof cwd === 'string' && cwd.length > 0) return cwd
   return process.cwd()
 }

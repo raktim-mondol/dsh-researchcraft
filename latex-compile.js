@@ -10,8 +10,7 @@ const COMMAND_TIMEOUT_MS = 60_000
 const MAX_LOG_RETURN = 8_000
 
 function workspaceRoot(exec) {
-  const session = exec.agent?.session
-  const cwd = session?.cwd ?? session?.workingDirectory
+  const cwd = exec.agent?.session?.header?.cwd
   if (typeof cwd === 'string' && cwd.length > 0) return cwd
   return process.cwd()
 }
