@@ -5,6 +5,7 @@ import { applyLatexCompile } from './latex-compile.js'
 import { applyModalRun } from './modal-run.js'
 import { applyRunpodRun } from './runpod-run.js'
 import { applyWorkflows } from './workflows.js'
+import { applyScientificResult } from './scientific-result.js'
 import { seed } from './seed.js'
 import { registerKeysSettings } from './settings-keys.js'
 
@@ -27,4 +28,5 @@ export function apply(ctx) {
   applyModalRun(ctx)
   applyRunpodRun(ctx)
   applyWorkflows(ctx)
+  applyScientificResult(ctx)
 }

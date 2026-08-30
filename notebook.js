@@ -2,23 +2,44 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { notebookToMarkdown } from './notebook-export.js'
+import { buildNotebookZip } from './notebook-zip.js'
 
 const TYPES = ['hypothesis', 'method', 'observation', 'decision', 'note']
 const STANCES = ['supports', 'refutes', 'neutral']
 const CONFIDENCE = ['low', 'medium', 'high']
 
 function workspaceRoot(exec) {
-  const session = exec.agent?.session
-  const cwd = session?.cwd ?? session?.workingDirectory
+  const cwd = exec.agent?.session?.header?.cwd
   if (typeof cwd === 'string' && cwd.length > 0) return cwd
   return process.cwd()
 }
 
+function sanitize(id) {
+  return id.replace(/[^A-Za-z0-9._-]/g, '_')
+}
+
+/**
+ * Resolve the notebook file's session key, walking `session.header.parentSession`
+ * as far as the live in-process SessionStore (`ctx.get('sessions')` — the
+ * documented optional-service pattern, never a hard dependency) lets us follow
+ * it, so every session in one delegation tree (a subagent's own session is
+ * distinct from its parent's) shares a single notebook file. Falls back to the
+ * last resolvable hop, and to this session's own id when there is no parent —
+ * unchanged behavior for a plain top-level session.
+ */
 function sessionKey(exec) {
-  const session = exec.agent?.session
-  const id = session?.id ?? exec.agent?.sessionId
-  if (typeof id === 'string' && id.length > 0) return id.replace(/[^A-Za-z0-9._-]/g, '_')
-  return 'default'
+  let id = exec.agent?.session?.header?.id ?? exec.agent?.session?.id ?? exec.agent?.sessionId
+  if (typeof id !== 'string' || id.length === 0) return 'default'
+  const visited = new Set([id])
+  let parent = exec.agent?.session?.header?.parentSession
+  const sessions = exec.agent?.ctx?.get?.('sessions')
+  while (typeof parent === 'string' && parent.length > 0 && !visited.has(parent)) {
+    id = parent
+    visited.add(parent)
+    if (typeof sessions?.get !== 'function') break
+    parent = sessions.get(parent)?.header?.parentSession
+  }
+  return sanitize(id)
 }
 
 function notebookFile(exec) {
@@ -46,7 +67,9 @@ function readEntries(file) {
 
 function render(value) {
   if (value && typeof value.path === 'string' && typeof value.entries === 'number') {
-    return [{ type: 'text', text: `wrote lab notebook to ${value.path} (${value.entries} entries)` }]
+    const missingNote = value.missing_artifacts?.length ? `, ${value.missing_artifacts.length} artifact(s) missing` : ''
+    const label = value.format === 'zip' ? 'lab notebook bundle' : 'lab notebook'
+    return [{ type: 'text', text: `wrote ${label} to ${value.path} (${value.entries} entries${missingNote})` }]
   }
   return [{ type: 'text', text: JSON.stringify(value, null, 2) }]
 }
@@ -61,17 +84,22 @@ export function applyNotebook(ctx) {
       'Attach artifacts (workspace-relative paths) for figures, tables, and scripts.',
       'Every log returns an id. Thread later results with relatesTo and stance. Correct an earlier entry by logging a new one with supersedes.',
       'Use action "read" to recall ids and earlier findings.',
-      'Use action "export" to render the session\'s entries to a readable Markdown lab record and write it into the workspace.',
+      'Use action "export" to render the session\'s entries to a readable Markdown lab record and write it into the workspace, or export_format "zip" to bundle that Markdown together with every artifact file the entries reference into one .zip.',
     ].join(' '),
     parameters: {
       action: {
         type: 'string',
         enum: ['log', 'read', 'export'],
-        description: 'log appends an entry; read returns this session\'s entries; export renders them to a Markdown file.',
+        description: 'log appends an entry; read returns this session\'s entries; export renders them to a Markdown file (or a zip bundle, see export_format).',
       },
       export_path: {
         type: 'string',
-        description: 'Workspace-relative output path for action=export (default lab-notebook.md).',
+        description: 'Workspace-relative output path for action=export (default lab-notebook.md, or lab-notebook.zip when export_format="zip").',
+      },
+      export_format: {
+        type: 'string',
+        enum: ['markdown', 'zip'],
+        description: 'Only for action=export. "zip" bundles lab-notebook.md with every referenced artifact file under artifacts/. Default markdown.',
       },
       type: {
         type: 'string',
@@ -120,15 +148,22 @@ export function applyNotebook(ctx) {
       }
       if (action === 'export') {
         const entries = readEntries(file)
-        const markdown = notebookToMarkdown(entries, { sessionId: sessionKey(exec) })
+        const format = args.export_format === 'zip' ? 'zip' : 'markdown'
+        const root = workspaceRoot(exec)
+        const defaultName = format === 'zip' ? 'lab-notebook.zip' : 'lab-notebook.md'
         const rel = typeof args.export_path === 'string' && args.export_path.trim()
           ? args.export_path.trim()
-          : 'lab-notebook.md'
-        const root = workspaceRoot(exec)
+          : defaultName
         const out = isAbsolute(rel) ? rel : resolve(root, rel)
         mkdirSync(dirname(out), { recursive: true })
+        if (format === 'zip') {
+          const { buffer, missing } = buildNotebookZip(entries, { sessionId: sessionKey(exec), sandboxRoot: root })
+          writeFileSync(out, buffer)
+          return { path: rel, entries: entries.length, format: 'zip', missing_artifacts: missing }
+        }
+        const markdown = notebookToMarkdown(entries, { sessionId: sessionKey(exec) })
         writeFileSync(out, markdown, 'utf8')
-        return { path: rel, entries: entries.length }
+        return { path: rel, entries: entries.length, format: 'markdown' }
       }
 
       const title = typeof args.title === 'string' ? args.title.trim() : ''

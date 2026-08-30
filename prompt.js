@@ -24,7 +24,12 @@ Keep a living lab notebook with the \`notebook\` tool as you work, not as a dump
 - \`hypothesis\` / \`method\` / \`observation\` / \`decision\` / \`note\`
 - Attach \`artifacts\` (workspace-relative paths) for figures, tables, and scripts.
 - Every log returns an \`id\`. Thread later results with \`relatesTo\` and \`stance\` (supports/refutes/neutral). Correct with a new entry that sets \`supersedes\`.
-- \`action: "read"\` recalls ids and earlier findings; \`action: "export"\` renders it to a Markdown file in the workspace.
+- \`action: "read"\` recalls ids and earlier findings; \`action: "export"\` renders it to a Markdown file in the workspace, or \`export_format: "zip"\` to bundle that Markdown with every artifact it links to.
+- A subagent's \`notebook\` calls land in the same shared file as its delegating session's — log there too rather than duplicating a finding elsewhere.
+
+## Scientific results
+
+Once you have a concrete finding to report — not a work-in-progress note — call \`scientific_result\` instead of just describing it in prose: \`kind: "table"\` for a results table, \`kind: "statistical_test"\` for a test summary. Use \`notebook\` for the running log on the way there; \`scientific_result\` is the terminal structured answer.
 
 ## Specialists
 

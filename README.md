@@ -46,7 +46,8 @@ The preset picker remembers your last choice per browser, so you'll typically on
 
 - **ResearchCraft agent preset** — persona, research system prompt (notebook discipline, specialist roster, connector guidance), standard coding tools, and the 4 academic MCP connectors below. Select it explicitly per chat — see [Run](#run).
 - Scientific skills catalogue (`scientific-agent-skills`, or `RESEARCHCRAFT_SKILLS_DIR`) — available on every preset
-- `notebook` tool — log, read, and export a living lab notebook (JSONL under `<cwd>/.dsh/notebook/`) — every preset
+- `notebook` tool — log, read, and export a living lab notebook (JSONL under `<cwd>/.dsh/notebook/`), shared across a subagent delegation tree, with a zip-bundle export alongside the plain Markdown one — every preset
+- `scientific_result` tool — a structured, schema-validated "final finding" card (table or statistical-test), distinct from the notebook's running log — every preset
 - Specialist briefs (code-reviewer, literature-researcher, …) for the DSH `subagent` tool — every preset
 - `image_generate` tool for conceptual scientific figures (Gemini "nano banana" by default) — every preset
 - `sci_inspect` tool for scientific file formats (chemistry, structure, mass spec, arrays, imaging, AnnData) — every preset
@@ -115,6 +116,16 @@ The tool finds `python-helpers/.venv` automatically. Override with `RESEARCHCRAF
 | `runpod_run` | `RUNPOD_API_KEY` | https://console.runpod.io/user/settings |
 
 `runpod_run` also needs `ssh`, `scp`, and `ssh-keygen` on `PATH` (standard OpenSSH client tools) to provision and reach the ephemeral pod.
+
+## Lab notebook
+
+`notebook` keeps a running JSONL log per session at `<cwd>/.dsh/notebook/<sessionId>.jsonl` — `action: "log"` for a hypothesis/method/observation/decision/note, `action: "read"` to recall it, `action: "export"` to render it to Markdown (or a `.zip` bundling that Markdown with every artifact file the entries link to — set `export_format: "zip"`).
+
+A subagent the top-level agent delegates to runs in its own DSH session, but its `notebook` calls resolve to the **same** file as its ancestor's — the tool walks the session's delegation lineage (`session.header.parentSession`) back to the root, so a specialist's findings land in the one shared notebook rather than a file nobody reads.
+
+## Scientific results
+
+`scientific_result` is a structured, schema-validated card for a *terminal* finding — a results table (`kind: "table"`) or a statistical-test summary (`kind: "statistical_test"`) — with up to 20 linked workspace-relative artifacts (`role`: figure/table/script/report/data/log). Use it once you have a concrete finding to report; use `notebook` for the running log on the way there. It has no separate storage — the call and its result are already part of the session transcript.
 
 ## Workflow templates
 

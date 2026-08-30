@@ -63,8 +63,13 @@ export function notebookToMarkdown(entries, opts = {}) {
     }
     if (e.artifacts?.length) {
       for (const p of e.artifacts) {
+        if (opts.missingArtifacts?.has(p)) {
+          lines.push(`\`${p}\` _(artifact missing at export time)_`)
+          continue
+        }
         const name = p.split('/').pop() ?? p
-        lines.push(IMAGE_RE.test(p) ? `![${name}](${p})` : `[${p}](${p})`)
+        const href = opts.artifactHref?.(p) ?? p
+        lines.push(IMAGE_RE.test(p) ? `![${name}](${href})` : `[${p}](${href})`)
       }
       lines.push('')
     }
