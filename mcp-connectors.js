@@ -1,7 +1,7 @@
 /**
- * Academic search MCP connectors (Parallel, Firecrawl, Consensus, Scite),
- * mounted programmatically instead of as static cordis.yml rows so each
- * server's auth can come from the `dsh-researchcraft-keys` settings store
+ * Academic search MCP connectors (Parallel, Firecrawl, Scite), mounted
+ * programmatically instead of as static cordis.yml rows so each server's
+ * auth can come from the `dsh-researchcraft-keys` settings store
  * (Settings -> ResearchCraft API keys) as well as the matching env var.
  * Resolved once when the `researchcraft` preset first mounts. That mount is
  * a STANDING composition shared by every session naming the preset for the
@@ -13,10 +13,15 @@
  * the correct preset). `dsh-mcp-client`'s own config is fixed per instance,
  * and env vars have the same restart requirement.
  *
- * Parallel and Firecrawl work keyless (rate-limited); Consensus and Scite
- * authenticate via OAuth sign-in in their own browser apps normally — DSH has
- * no interactive OAuth flow, so those two only mount when a personal bearer
- * token is available.
+ * Parallel and Firecrawl work keyless (rate-limited); Scite authenticates via
+ * OAuth sign-in in its own browser app normally — DSH has no interactive
+ * OAuth flow, so it only mounts when a personal bearer token is available.
+ *
+ * Consensus is NOT here: it moved off its MCP server (which needed the same
+ * OAuth workaround) to a plain REST API with `x-api-key` auth, so it's now
+ * `consensus-search.js` — a native per-call tool, not a standing MCP mount,
+ * which also means a Settings-changed CONSENSUS_API_KEY takes effect on the
+ * next call rather than needing a restart. See presets/researchcraft/agent.cordis.yml.
  */
 import * as McpClient from '@deepseek-ai/dsh-mcp-client'
 import { resolveEnv } from './credential-env.js'
@@ -25,10 +30,9 @@ export const name = 'dsh-researchcraft-mcp-connectors'
 export const inject = []
 
 export async function apply(ctx) {
-  const [parallelKey, firecrawlKey, consensusKey, sciteKey] = await Promise.all([
+  const [parallelKey, firecrawlKey, sciteKey] = await Promise.all([
     resolveEnv('PARALLEL_API_KEY'),
     resolveEnv('FIRECRAWL_API_KEY'),
-    resolveEnv('CONSENSUS_API_KEY'),
     resolveEnv('SCITE_API_KEY'),
   ])
 
@@ -46,15 +50,6 @@ export async function apply(ctx) {
       ? `https://mcp.firecrawl.dev/${encodeURIComponent(firecrawlKey)}/v2/mcp`
       : 'https://mcp.firecrawl.dev/v2/mcp',
   })
-
-  if (consensusKey) {
-    ctx.plugin(McpClient, {
-      serverName: 'consensus',
-      transport: 'streamable-http',
-      url: 'https://mcp.consensus.app/mcp',
-      headers: { Authorization: `Bearer ${consensusKey}` },
-    })
-  }
 
   if (sciteKey) {
     ctx.plugin(McpClient, {

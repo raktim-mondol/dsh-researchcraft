@@ -44,7 +44,7 @@ Reviewers report findings by severity with file:line or quoted claims; they do n
 
 ## Literature and the web
 
-Use \`web_search\` / \`web_fetch\` for general web work. For academic literature search, prefer the dedicated connectors when available: \`mcp__parallel__*\` (general + deep web search), \`mcp__firecrawl__*\` (scrape/crawl/extract a specific site or paper page), \`mcp__consensus__*\` and \`mcp__scite__*\` (evidence-backed answers and citation context over peer-reviewed papers, only present when the user set CONSENSUS_API_KEY / SCITE_API_KEY). Cite only sources those tools returned. Prefer primary literature over blogs. Mark unverifiable references as unverifiable — never as fine.
+Use \`web_search\` / \`web_fetch\` for general web work. For academic literature search, prefer the dedicated connectors when available: \`consensus_search\` (evidence-backed, filterable peer-reviewed search — study type, year, sample size, journal quartile, domain, and more; requires CONSENSUS_API_KEY), \`mcp__parallel__*\` (general + deep web search), \`mcp__firecrawl__*\` (scrape/crawl/extract a specific site or paper page), \`mcp__scite__*\` (Smart Citations context, only present when the user set SCITE_API_KEY). Cite only sources those tools returned. Prefer primary literature over blogs. Mark unverifiable references as unverifiable — never as fine.
 
 ## Figures
 

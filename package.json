@@ -8,6 +8,7 @@
   "exports": {
     ".": "./index.js",
     "./mcp-connectors": "./mcp-connectors.js",
+    "./consensus-search": "./consensus-search.js",
     "./prompt-section": "./prompt-section.js",
     "./client": "./lib/client.js",
     "./package.json": "./package.json"
@@ -33,6 +34,7 @@
     "credential-env.js",
     "settings-keys.js",
     "mcp-connectors.js",
+    "consensus-search.js",
     "prompt-section.js",
     "prompt.js",
     "seed.js",

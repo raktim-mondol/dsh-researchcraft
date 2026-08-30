@@ -38,7 +38,7 @@ Opens the Harness web UI (typically `http://127.0.0.1:3080`).
 2. Click the preset selector at the top of the message box (reads "PTC mode", "Standard mode", or similar by default).
 3. Choose **ResearchCraft** from the list.
 
-The persona, the longer research system prompt (notebook discipline, specialist roster, MCP connector guidance, …), and the four academic search connectors (`mcp__parallel__*` etc.) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset.
+The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), and academic search (`mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset.
 
 The preset picker remembers your last choice per browser, so you'll typically only need to do this once.
 
@@ -54,7 +54,7 @@ The preset picker remembers your last choice per browser, so you'll typically on
 - `latex_compile` tool (`.tex` → PDF, bibtex/biber-aware) — every preset
 - `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload — every preset
 - `workflow` tool over a ~330-template research-task catalogue — every preset
-- Academic search MCP connectors: Parallel, Firecrawl, Consensus, Scite — **ResearchCraft preset only**
+- Academic search: Parallel, Firecrawl, Scite (MCP connectors) and `consensus_search` (native REST tool) — **ResearchCraft preset only**
 - A **Settings → ResearchCraft API keys** page for all of the above — no shell env vars required
 
 ## API keys
@@ -64,24 +64,25 @@ Every credential below (`PARALLEL_API_KEY`, `FIRECRAWL_API_KEY`, `CONSENSUS_API_
 - **Settings → ResearchCraft API keys** in the DSH web UI — type a key, Save. Persisted in the profile's `settings.yaml`; a blank field always means "keep the current value", Clear removes it.
 - **Shell environment variable** — takes priority over Settings when both are set.
 
-Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`) pick up a Settings change on the very next call, no restart needed.
+Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`, `consensus_search`) pick up a Settings change on the very next call, no restart needed.
 
-The four MCP connectors (below) are different: the `researchcraft` agent preset mounts once as a standing composition shared by every chat session for the life of the running `dsh` process, so a key change only reaches them after you **stop and restart `dsh` itself** — a new chat session on the same running process is not enough.
+The three MCP connectors (below) are different: the `researchcraft` agent preset mounts once as a standing composition shared by every chat session for the life of the running `dsh` process, so a key change only reaches them after you **stop and restart `dsh` itself** — a new chat session on the same running process is not enough. `consensus_search` isn't an MCP connector — see below — so it doesn't have this restart requirement.
 
-**Also make sure the chat session is actually on the ResearchCraft preset.** The connectors are wired into the `researchcraft` agent preset only; a session left on the default preset (Standard/PTC/etc.) has no `mcp__parallel__*`/`mcp__firecrawl__*`/`mcp__consensus__*`/`mcp__scite__*` tools at all, and calling one fails with `tools[name] is not a function`. Check the preset selector next to the session title (top of the message box for a new chat, top-left of an existing one) reads "ResearchCraft" before asking the agent to search.
+**Also make sure the chat session is actually on the ResearchCraft preset.** Both the MCP connectors and `consensus_search` are wired into the `researchcraft` agent preset only; a session left on the default preset (Standard/PTC/etc.) has none of them, and calling one fails with `tools[name] is not a function`. Check the preset selector next to the session title (top of the message box for a new chat, top-left of an existing one) reads "ResearchCraft" before asking the agent to search.
 
-## Academic search connectors
+## Academic search
 
-Four literature/web MCP servers are wired into the `researchcraft` preset and surface as `mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__consensus__*`, `mcp__scite__*` tools:
+Three literature/web MCP servers are wired into the `researchcraft` preset and surface as `mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__scite__*` tools:
 
 | Connector | Key | Without it |
 |---|---|---|
 | [Parallel](https://parallel.ai) — general + deep web search | `PARALLEL_API_KEY` (optional) | Works keyless, rate-limited |
 | [Firecrawl](https://firecrawl.dev) — scrape/crawl/extract | `FIRECRAWL_API_KEY` (optional) | Works keyless, rate-limited |
-| [Consensus](https://consensus.app) — evidence-backed answers over peer-reviewed papers | `CONSENSUS_API_KEY` (required) | Connector stays disabled |
 | [Scite](https://scite.ai) — Smart Citations, supporting/contrasting context | `SCITE_API_KEY` (required) | Connector stays disabled |
 
-Set any of these via Settings → ResearchCraft API keys or the matching env var (see [API keys](#api-keys)). Consensus and Scite's hosted MCP servers normally authenticate through an OAuth sign-in flow in a browser app; DSH has no interactive OAuth flow, so these two connectors only activate once a personal bearer token is available from either source.
+[Consensus](https://consensus.app) is a native `consensus_search` tool (not an MCP connector) over its `GET /v1/search` REST API — plain `x-api-key` auth, no OAuth. Requires `CONSENSUS_API_KEY` (required — the tool returns a clear error, not a disabled connector, when unset). Supports the API's full filter set: study type, year/month range, sample size, journal quartile (SJR), citation count, study duration, domain, country, publisher, open-access/preprint/human/controlled/clinical-guideline flags, and pagination.
+
+Set any of these via Settings → ResearchCraft API keys or the matching env var (see [API keys](#api-keys)). Scite's hosted MCP server normally authenticates through an OAuth sign-in flow in a browser app; DSH has no interactive OAuth flow, so it only activates once a personal bearer token is available from either source. Consensus has a proper `x-api-key`-based REST API instead, so `consensus_search` needs no such workaround.
 
 ## Image generation
 
