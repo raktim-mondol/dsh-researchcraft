@@ -27,9 +27,8 @@
  * displaying a stored key.
  */
 import z from '@deepseek-ai/schemastery'
-import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 
-export const KEYS_NAMESPACE = settingsNamespace('dsh-researchcraft-keys')
+export const KEYS_NAMESPACE = 'dsh-researchcraft-keys'
 
 export const KEY_FIELDS = [
   'PARALLEL_API_KEY',
