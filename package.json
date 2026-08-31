@@ -9,6 +9,7 @@
     ".": "./index.js",
     "./mcp-connectors": "./mcp-connectors.js",
     "./consensus-search": "./consensus-search.js",
+    "./subagent-models": "./subagent-models.js",
     "./prompt-section": "./prompt-section.js",
     "./client": "./lib/client.js",
     "./package.json": "./package.json"
@@ -35,6 +36,7 @@
     "settings-keys.js",
     "mcp-connectors.js",
     "consensus-search.js",
+    "subagent-models.js",
     "prompt-section.js",
     "prompt.js",
     "seed.js",
@@ -74,6 +76,7 @@
     "adm-zip": "^0.6.0",
     "@deepseek-ai/dsh-tools": "0.1.1-rc.2",
     "@deepseek-ai/dsh-mcp-client": "0.1.1-rc.2",
+    "@deepseek-ai/dsh-tool-subagent": "0.1.1-rc.2",
     "@deepseek-ai/dsh-settings": "0.1.1-rc.2",
     "@deepseek-ai/schemastery": "^3.18.1",
     "modal": "^0.8.2"

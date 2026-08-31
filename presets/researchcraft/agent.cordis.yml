@@ -201,7 +201,6 @@
       config:
         provider: spawn
         toolName: subagent
-        modelSelectionSettings: true
         backgroundMode: continuable
 
     # Fork omits model selection so provider/model stay equal to the parent and
@@ -214,6 +213,19 @@
         provider: fork
         toolName: subagent_fork
         backgroundMode: continuable
+
+    # Two more spawn-backed delegation tools, each pinned to a fixed model via
+    # `agentOptions.model` so the top-level agent can route a delegated task
+    # to the model that fits it: `subagent_pro` for unusually heavy reasoning,
+    # `subagent_vision` for tasks that need to read an image (paired with the
+    # shared `read_image` tool from `@deepseek-ai/dsh-tool-fs`, gated on the
+    # child's route actually declaring image input). Mounted programmatically
+    # rather than as static rows so the model ids can come from Settings ->
+    # ResearchCraft API keys as well as SUBAGENT_MODEL_COMPLEX/
+    # SUBAGENT_MODEL_VISION — see subagent-models.js for the resolution order
+    # and the restart caveat this shares with the MCP connectors above.
+    - id: subagent-models
+      name: dsh-researchcraft/subagent-models
 
     # Production dsh does not install these optional providers. Install the
     # matching Bundle in this Profile and restart the Host, then copy this

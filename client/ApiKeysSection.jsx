@@ -5,6 +5,12 @@ const IMAGE_MODEL_OPTIONS = [
   { value: 'gemini-3.1-flash-image', label: 'gemini-3.1-flash-image — nano banana 2' },
   { value: 'gemini-3-pro-image', label: 'gemini-3-pro-image — nano banana pro' },
 ]
+const SUBAGENT_MODEL_COMPLEX_OPTIONS = [
+  { value: 'deepseek-v4-pro', label: 'deepseek-v4-pro (default)' },
+]
+const SUBAGENT_MODEL_VISION_OPTIONS = [
+  { value: 'deepseek-v4-flash-vision-exp', label: 'deepseek-v4-flash-vision-exp (default)' },
+]
 const CUSTOM_MODEL = '__custom__'
 
 /** The settings fields this section manages, grouped for display. */
@@ -15,6 +21,8 @@ const KEYS = [
   { field: 'SCITE_API_KEY', label: 'Scite', group: 'Literature search', hint: 'Required to enable this connector.' },
   { field: 'GEMINI_API_KEY', label: 'Gemini', group: 'Image generation', hint: 'Enables the image_generate tool.' },
   { field: 'IMAGE_MODEL', label: 'Image model', group: 'Image generation', type: 'select', options: IMAGE_MODEL_OPTIONS, hint: 'Which Gemini model image_generate uses by default. Defaults to nano banana if unset.' },
+  { field: 'SUBAGENT_MODEL_COMPLEX', label: 'Complex-task model', group: 'Subagent model routing', type: 'select', options: SUBAGENT_MODEL_COMPLEX_OPTIONS, hint: 'Model for the subagent_pro delegation tool (unusually heavy reasoning). Requires restarting dsh to apply — same as the MCP connector keys above, not like Image model.' },
+  { field: 'SUBAGENT_MODEL_VISION', label: 'Image-reading model', group: 'Subagent model routing', type: 'select', options: SUBAGENT_MODEL_VISION_OPTIONS, hint: 'Model for the subagent_vision delegation tool (reads images via read_image). Requires restarting dsh to apply — same as the MCP connector keys above, not like Image model.' },
   { field: 'MODAL_TOKEN_ID', label: 'Modal — token ID', group: 'Remote compute', hint: 'From modal.com/settings.' },
   { field: 'MODAL_TOKEN_SECRET', label: 'Modal — token secret', group: 'Remote compute', hint: 'From modal.com/settings.' },
   { field: 'RUNPOD_API_KEY', label: 'Runpod', group: 'Remote compute', hint: 'From console.runpod.io/user/settings.' },
