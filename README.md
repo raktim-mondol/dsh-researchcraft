@@ -53,9 +53,10 @@ The preset picker remembers your last choice per browser, so you'll typically on
 - `sci_inspect` tool for scientific file formats (chemistry, structure, mass spec, arrays, imaging, AnnData) — every preset
 - `latex_compile` tool (`.tex` → PDF, bibtex/biber-aware) — every preset
 - `pdf_to_markdown` tool (PDF → Markdown, via [pdf-inspector](https://github.com/firecrawl/pdf-inspector)) for literature-survey conversion of downloaded papers — every preset
-- `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload — every preset
+- `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload, plus bundled `modal`/`runpod` skills covering the rest of each CLI (Serverless endpoints, volumes/secrets, Hub templates, …) — see [Remote compute](#remote-compute) — every preset
 - `workflow` tool over a ~330-template research-task catalogue — every preset
 - Academic search: Parallel, Firecrawl, Scite (MCP connectors), `consensus_search` (native REST tool), and `paper_download` (Unpaywall open-access PDF resolver) — **ResearchCraft preset only**
+- Bundled `agent-browser` skill for interactive web browsing (navigate, log in, fill forms, download datasets), with screenshots delegated to `subagent_vision` — see [Browsing the web](#browsing-the-web) — every preset
 - A **Settings → ResearchCraft API keys** page for all of the above — no shell env vars required
 
 ## API keys
@@ -86,6 +87,12 @@ Three literature/web MCP servers are wired into the `researchcraft` preset and s
 [Consensus](https://consensus.app) is a native `consensus_search` tool (not an MCP connector) over its `GET /v1/search` REST API — plain `x-api-key` auth, no OAuth. Requires `CONSENSUS_API_KEY` (required — the tool returns a clear error, not a disabled connector, when unset). Supports the API's full filter set: study type, year/month range, sample size, journal quartile (SJR), citation count, study duration, domain, country, publisher, open-access/preprint/human/controlled/clinical-guideline flags, and pagination.
 
 [Unpaywall](https://unpaywall.org) backs `paper_download` (also a native REST tool, not an MCP connector): given a DOI, it resolves the best open-access location and the tool downloads that PDF straight into the workspace (or downloads a direct URL you already have, no DOI needed). Requires `UNPAYWALL_EMAIL` — Unpaywall's API asks callers to identify themselves with a real contact email; the tool returns a clear error, not a disabled connector, when unset, and never invents one on your behalf. When a DOI has no open-access copy, the tool returns a plain "paywalled" result (with the landing-page URL) rather than an error — the agent is steered to report that honestly instead of inferring the paper's content from a search snippet. The response is also checked against the PDF magic bytes before being saved, so a login/CAPTCHA page returned instead of the real file surfaces as a clear error rather than a corrupt "PDF."
+
+## Browsing the web
+
+`web_search`/`web_fetch` and the connectors above cover search and plain-text fetches. For anything that needs a real rendered browser — exploring a site interactively, logging in, filling out a form, clicking through to a dataset download, or verifying a page actually renders correctly — the agent loads the bundled `agent-browser` skill (`skills/agent-browser`, shipped and seeded the same way as the skills above) and drives the [agent-browser](https://github.com/vercel-labs/agent-browser) CLI directly via `bash`. The CLI isn't bundled with this plugin's package, but the agent installs it itself when missing (`npm i -g agent-browser && agent-browser install`, or `npx agent-browser@latest ...` for a one-off task) rather than asking the user to.
+
+Most of what it does — navigating, reading, filling forms, extracting data, downloading files — works off an accessibility-tree snapshot and needs no image at all. The one exception is `screenshot`: since the session's own model isn't guaranteed to have vision input, the skill steers the agent to delegate reading any screenshot to `subagent_vision` (see [Subagent model routing](#subagent-model-routing)) instead of guessing at its content.
 
 Set any of these via Settings → ResearchCraft API keys or the matching env var (see [API keys](#api-keys)). `SCITE_API_KEY` is an `mcp`-scoped key from [scite.ai/users/me/api](https://scite.ai/users/me/api) — Scite's own documented non-interactive path for MCP clients, sent as a bearer token to `https://api.scite.ai/mcp` (no OAuth or token exchange). Scite also offers an OAuth flow, but only for its first-party ChatGPT/Claude plugin and other interactive clients — not relevant here.
 
@@ -165,6 +172,12 @@ Prebuilt native binaries ship as `optionalDependencies` for Linux (x64/ARM64, gl
 | `runpod_run` | `RUNPOD_API_KEY` | https://console.runpod.io/user/settings |
 
 `runpod_run` also needs `ssh`, `scp`, and `ssh-keygen` on `PATH` (standard OpenSSH client tools) to provision and reach the ephemeral pod.
+
+By default every `runpod_run` call is a brand-new, disposable pod — `/workspace` (and anything uploaded into it) is gone once the pod terminates, so only what's named in `files_out` comes back. Pass `volume_name` to persist data across calls instead: it mounts a Runpod [network volume](https://docs.runpod.io/pods/storage/create-network-volumes) at `/workspace`, and reusing the same `volume_name` on a later call reattaches the same storage — e.g. upload a large dataset once, then run several training/eval passes against it without re-uploading it with `files_in` each time. The volume is looked up by name and created automatically the first time it's used, which requires `data_center_id` (network volumes are pinned to a data center); `volume_size_gb` (default 20) only applies when creating a new one. The pod's compute is always deleted after the call regardless — a named volume is not, and keeps costing storage until deleted from the Runpod console (this tool has no delete-volume path, so it won't silently remove a dataset).
+
+For anything beyond what `modal_run`/`runpod_run` cover — Serverless endpoints, Hub templates, direct volume/secret management, a deployed app, checking GPU availability — the agent loads the bundled `runpod`/`modal` skills (`skills/runpod`, `skills/modal`, shipped and seeded the same way as the specialist skills above) and drives the `runpodctl`/`modal` CLIs directly via `bash`. Neither CLI ships inside this plugin's package, but the agent installs whichever it needs itself, user-locally and without root, per the steps baked into each skill — `runpodctl` as a plain release binary into `~/.local/bin`, `modal` via `uvx modal ...` (no persistent install needed) or `uv tool install modal` for a longer session — rather than asking the user to set it up first.
+
+Note: `runpod_run`/`runpod-client.js` talk to Runpod's REST v1 API (`https://rest.runpod.io/v1`), which Runpod has flagged for retirement on 2026-11-15 in favor of REST v2 — no action needed yet, but worth knowing before that date.
 
 ## Lab notebook
 

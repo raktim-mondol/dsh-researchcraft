@@ -49,6 +49,14 @@ export async function deletePod(apiKey, podId) {
   await request(apiKey, 'DELETE', `/pods/${encodeURIComponent(podId)}`)
 }
 
+export async function listNetworkVolumes(apiKey) {
+  return request(apiKey, 'GET', '/networkvolumes')
+}
+
+export async function createNetworkVolume(apiKey, { name, size, dataCenterId }) {
+  return request(apiKey, 'POST', '/networkvolumes', { name, size, dataCenterId })
+}
+
 function runSync(cmd, args) {
   const r = spawnSync(cmd, args, { encoding: 'utf8' })
   if (r.error) throw r.error

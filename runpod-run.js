@@ -3,9 +3,11 @@ import { dirname, posix, resolve } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { DEFAULT_RUNPOD_INSTANCE_ID, RUNPOD_INSTANCE_IDS, resolveRunpodInstance } from './runpod-instances.js'
 import {
+  createNetworkVolume,
   createPod,
   deletePod,
   ephemeralPodName,
+  listNetworkVolumes,
   makeEphemeralSshKey,
   scpDownload,
   scpUpload,
@@ -20,6 +22,19 @@ const DEFAULT_TIMEOUT_S = 600
 const MAX_TIMEOUT_S = 3600
 const PROVISION_TIMEOUT_S = 300
 const MAX_OUTPUT_CHARS = 16000
+const DEFAULT_VOLUME_SIZE_GB = 20
+
+/** Find an existing network volume by name, or create one. Volumes are pinned to a data center at creation. */
+async function resolveNetworkVolume(key, { volumeName, volumeSizeGb, dataCenterId }) {
+  const existing = await listNetworkVolumes(key)
+  const found = (Array.isArray(existing) ? existing : []).find((v) => v.name === volumeName)
+  if (found) return { id: found.id, created: false }
+  if (!dataCenterId) {
+    throw Object.assign(new Error(`No existing Runpod network volume named "${volumeName}" — pass data_center_id to create one.`), { code: 'volume_needs_data_center' })
+  }
+  const created = await createNetworkVolume(key, { name: volumeName, size: volumeSizeGb ?? DEFAULT_VOLUME_SIZE_GB, dataCenterId })
+  return { id: created.id, created: true }
+}
 
 function workspaceRoot(exec) {
   const cwd = exec.agent?.session?.header?.cwd
@@ -54,6 +69,7 @@ export function applyRunpodRun(ctx) {
       'Use for heavy or GPU work that should not run locally: model training/fine-tuning, GPU inference, large simulations.',
       `Pick an instance by GPU need (one of: ${RUNPOD_INSTANCE_IDS.join(', ')}; default "${DEFAULT_RUNPOD_INSTANCE_ID}").`,
       'Upload inputs with files_in (workspace-relative) and name expected outputs in files_out — they are copied back into the local workspace.',
+      'Every call is a fresh, disposable pod by default — /workspace is wiped when it terminates. Pass volume_name to mount a persistent Runpod network volume at /workspace instead, so a dataset or checkpoints uploaded in one call are still there on the next call with the same volume_name (no need to re-upload via files_in every time). The pod is always deleted after the call either way; a named volume is not — it keeps costing storage until deleted from the Runpod console.',
       'Requires RUNPOD_API_KEY (https://console.runpod.io/user/settings). Always terminates the pod when done.',
     ].join(' '),
     parameters: {
@@ -64,6 +80,9 @@ export function applyRunpodRun(ctx) {
       files_out: { type: 'array', items: { type: 'string' }, description: 'Workspace-relative paths to download back after the job finishes.' },
       timeout_sec: { type: 'integer', description: `Max seconds for the remote command (default ${DEFAULT_TIMEOUT_S}, max ${MAX_TIMEOUT_S}). Pod provisioning has a separate ${PROVISION_TIMEOUT_S}s cap.` },
       cloud_type: { type: 'string', enum: ['SECURE', 'COMMUNITY'], description: 'Runpod cloud tier (default COMMUNITY).' },
+      volume_name: { type: 'string', description: 'Reusable name for a persistent Runpod network volume mounted at /workspace. Reuse the same name across calls to keep data between runs instead of re-uploading it. Created automatically the first time it is used (needs data_center_id).' },
+      volume_size_gb: { type: 'integer', description: `Size in GB for a new volume_name volume (default ${DEFAULT_VOLUME_SIZE_GB}). Ignored when the volume already exists.` },
+      data_center_id: { type: 'string', description: 'Runpod data center id to create volume_name in, if it does not already exist yet (network volumes are pinned to a data center). Ignored when the volume already exists.' },
     },
     output: {
       schema: { type: 'json' },
@@ -94,6 +113,20 @@ export function applyRunpodRun(ctx) {
       const imageName = args.image?.trim() || spec.defaultImage
       const signal = exec.signal
 
+      let volume = null
+      if (args.volume_name) {
+        try {
+          volume = await resolveNetworkVolume(key, {
+            volumeName: args.volume_name,
+            volumeSizeGb: args.volume_size_gb,
+            dataCenterId: args.data_center_id,
+          })
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error)
+          return { error: 'volume_failure', text: `Runpod network volume "${args.volume_name}" could not be resolved: ${msg}` }
+        }
+      }
+
       let keys = null
       let podId = null
       const startedAt = Date.now()
@@ -122,6 +155,10 @@ export function applyRunpodRun(ctx) {
           env: { PUBLIC_KEY: keys.publicKeyOpenSsh },
           cloudType,
           supportPublicIp: true,
+        }
+        if (volume) {
+          createBody.networkVolumeId = volume.id
+          createBody.volumeMountPath = WORKDIR
         }
         if (spec.gpuTypeId) {
           createBody.gpuTypeIds = [spec.gpuTypeId]
@@ -195,6 +232,7 @@ export function applyRunpodRun(ctx) {
           ...(missingIn.length ? { files_in_missing: missingIn } : {}),
           files_out: collectedOut,
           ...(missingOut.length ? { files_out_missing: missingOut } : {}),
+          ...(volume ? { network_volume_id: volume.id, network_volume_name: args.volume_name } : {}),
         }
         const text = `${JSON.stringify(summary, null, 2)}\n\n--- stdout ---\n${truncate(result.stdout) || '(empty)'}\n\n--- stderr ---\n${truncate(result.stderr) || '(empty)'}`
         return { ...summary, text }
@@ -205,7 +243,8 @@ export function applyRunpodRun(ctx) {
           instance: spec.id,
           pod_id: podId,
           text: `Runpod run failed on instance "${spec.id}"${podId ? ` (pod ${podId})` : ''}: ${msg}\n`
-            + 'If this is an authentication error, check RUNPOD_API_KEY. If the GPU is out of stock, try another instance or cloud_type SECURE.',
+            + 'If this is an authentication error, check RUNPOD_API_KEY. If the GPU is out of stock, try another instance or cloud_type SECURE.'
+            + (volume ? ` If a volume_name is set, the chosen GPU may simply not be available in that volume's data center — try another instance, or drop volume_name for this run.` : ''),
         }
       } finally {
         signal?.removeEventListener('abort', onAbort)
