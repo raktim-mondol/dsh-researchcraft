@@ -109,7 +109,15 @@ Beyond a plain "look at this image" request, the system prompt steers the agent 
 
 Set `SUBAGENT_MODEL_COMPLEX`/`SUBAGENT_MODEL_VISION` via Settings → ResearchCraft API keys (two more dropdowns beside Image model) or the matching env var — env wins when both are set, same resolution order as the API keys above. Unlike Image model, these two need a `dsh` restart to take effect (see [API keys](#api-keys)).
 
-## Image generation
+## Figures
+
+The system prompt steers the agent to pick a figure tool by content, not by habit:
+
+- **Numeric data** (plots, charts, distributions, trends) — real Python (matplotlib/seaborn/etc.) output over real computed data, never `image_generate` and never fabricated values.
+- **Flow/process diagrams, pipelines, architecture, decision trees** — a Mermaid code block, kept editable as plain text. The agent checks with the user first before using it in place of a rendered image, since Mermaid renders in Markdown viewers (GitHub, VS Code, Obsidian, this chat) but not inside a compiled LaTeX PDF.
+- **Everything else** — conceptual schematics, illustrations, infographics with no real data or defined flow — `image_generate`.
+
+### Image generation
 
 `image_generate` writes conceptual schematics, diagrams, and illustrations to the workspace — not quantitative plots (those should be real Python/matplotlib output over real data).
 

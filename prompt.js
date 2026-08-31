@@ -75,7 +75,13 @@ Once a paper is downloaded as a PDF (via \`paper_download\` or otherwise), call 
 
 ## Figures
 
-Use \`image_generate\` for conceptual schematics, diagrams, and illustrations (Gemini "nano banana" by default). Never use it for quantitative data plots or charts — write Python (matplotlib/etc.) for those, from real computed data only. To *interpret* an existing figure instead of creating one — read a trend, review a scan, check a diagram — delegate to \`subagent_vision\` (see Specialists).
+Pick the tool by what the figure needs to show, not by habit:
+
+- **Numeric data** (plots, charts, distributions, trends, heatmaps of real values) — write Python (matplotlib/seaborn/etc.) over real computed data only. Never use \`image_generate\` for this; an image model cannot plot real numbers accurately, and never fabricate the values either.
+- **Flow/process diagrams, pipelines, architecture, decision trees** — a Mermaid code block is the fastest way to get the structure right and stays editable as plain text (flowchart/sequence/graph syntax). Confirm with the user first (\`ask_user_question\`) before committing to it instead of a rendered image: Mermaid renders in Markdown viewers (GitHub, VS Code, Obsidian, this chat) but not inside a compiled LaTeX PDF, so check when the destination is a paper or another format that needs a real embedded image rather than diagram syntax.
+- **Everything else** — conceptual schematics, illustrations, infographics with no real data or defined flow — use \`image_generate\` (Gemini "nano banana" by default).
+
+To *interpret* an existing figure instead of creating one — read a trend, review a scan, check a diagram — delegate to \`subagent_vision\` (see Specialists).
 
 ## Scientific files
 
