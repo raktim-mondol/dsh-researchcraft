@@ -43,18 +43,25 @@
  * `inject` must list every service a `ctx.plugin()`-mounted child reads,
  * not just what this module reads directly: Cordis gates `ctx.<service>`
  * property access per fiber, and mounting `@deepseek-ai/dsh-tool-subagent`
- * (whose own `inject` includes `tools`/`subagents`/`systemPrompt`/
- * `sessionProjections`) from inside a fiber that never declared those itself
- * throws `cannot get property "subagents" without inject` the moment the
- * child's `apply()` reads `ctx.subagents.getProvider(...)` — a load-time
- * failure, not a runtime one, so it took the preset down instead of just
- * these two tools.
+ * (whose 0.1.1-rc.2 `inject` is `tools`/`subagents`/`systemPrompt`) from
+ * inside a fiber that never declared those itself throws `cannot get
+ * property "subagents" without inject` the moment the child's `apply()`
+ * reads `ctx.subagents.getProvider(...)` — a load-time failure, not a
+ * runtime one, so it took the preset down instead of just these two tools.
+ *
+ * This plugin pins `@deepseek-ai/dsh-tool-subagent` to the same 0.1.1-rc.2
+ * line as `npm install -g @deepseek-ai/dsh` (`latest`). That tool-subagent
+ * forwards `agentOptions` to spawn without requiring an `agentOptions`
+ * capability flag. The 0.1.2-alpha.2 tool-subagent *does* require that flag
+ * and throws `provider "spawn" does not support child agentOptions` against
+ * the 0.1.1-rc.2 spawn provider, which made `subagent_pro`/`subagent_vision`
+ * vanish as "unknown tool". Stay on the matching `latest` packages.
  */
 import * as ToolSubagent from '@deepseek-ai/dsh-tool-subagent'
 import { getStoredKey } from './settings-keys.js'
 
 export const name = 'dsh-researchcraft-subagent-models'
-export const inject = ['tools', 'subagents', 'systemPrompt', 'sessionProjections']
+export const inject = ['tools', 'subagents', 'systemPrompt']
 
 const DEFAULT_COMPLEX_MODEL = 'deepseek-v4-pro'
 const DEFAULT_VISION_MODEL = 'deepseek-v4-flash-vision-exp'

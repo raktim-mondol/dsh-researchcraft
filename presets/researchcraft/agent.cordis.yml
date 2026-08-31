@@ -227,16 +227,12 @@
     # for the `inject` declaration a `ctx.plugin()`-mounted child like this
     # one needs.
     #
-    # Needs the `spawn` subagent provider's `agentOptions` capability, added
-    # in `@deepseek-ai/dsh-subagent-spawn-in-process` 0.1.2-alpha.2. On an
-    # older installed harness (`agentPreset.select`'s response stays `ok:
-    # true`, since one child tool failing to mount doesn't take the preset
-    # down) these two silently never reach the model: `ctx.plugin()` schedules
-    # the mount but doesn't run it inline, so the failure surfaces only inside
-    # `@deepseek-ai/dsh-tool-subagent`'s own Fiber execution as `provider
-    # "spawn" does not support child agentOptions` — invisible from here.
-    # `npm view @deepseek-ai/dsh dist-tags` shows whether a newer harness is
-    # available; the "latest" tag can lag behind what this plugin needs.
+    # `agentOptions.model` is forwarded by `@deepseek-ai/dsh-tool-subagent`
+    # 0.1.1-rc.2 (the npm `latest` line, same as `npm install -g @deepseek-ai/dsh`).
+    # Do not bump that dependency to 0.1.2-alpha.2 while the CLI is still on
+    # 0.1.1-rc.2: alpha.2 tool-subagent refuses to mount unless spawn advertises
+    # an `agentOptions` capability, so `subagent_pro`/`subagent_vision` vanish
+    # as "unknown tool" while the rest of the preset still looks healthy.
     - id: subagent-models
       name: dsh-researchcraft/subagent-models
 
