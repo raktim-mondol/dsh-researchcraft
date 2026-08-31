@@ -2,6 +2,7 @@ import { applyNotebook } from './notebook.js'
 import { applyImageGenerate } from './image-generate.js'
 import { applySciInspect } from './sci-inspect.js'
 import { applyLatexCompile } from './latex-compile.js'
+import { applyPdfToMarkdown } from './pdf-to-markdown.js'
 import { applyModalRun } from './modal-run.js'
 import { applyRunpodRun } from './runpod-run.js'
 import { applyWorkflows } from './workflows.js'
@@ -25,6 +26,7 @@ export function apply(ctx) {
   applyImageGenerate(ctx)
   applySciInspect(ctx)
   applyLatexCompile(ctx)
+  applyPdfToMarkdown(ctx)
   applyModalRun(ctx)
   applyRunpodRun(ctx)
   applyWorkflows(ctx)

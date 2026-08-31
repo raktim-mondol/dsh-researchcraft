@@ -38,7 +38,7 @@ Opens the Harness web UI (typically `http://127.0.0.1:3080`).
 2. Click the preset selector at the top of the message box (reads "PTC mode", "Standard mode", or similar by default).
 3. Choose **ResearchCraft** from the list.
 
-The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), and academic search (`mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset.
+The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), and academic search (`mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, pdf_to_markdown, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset.
 
 The preset picker remembers your last choice per browser, so you'll typically only need to do this once.
 
@@ -52,6 +52,7 @@ The preset picker remembers your last choice per browser, so you'll typically on
 - `image_generate` tool for conceptual scientific figures (Gemini "nano banana" by default) — every preset
 - `sci_inspect` tool for scientific file formats (chemistry, structure, mass spec, arrays, imaging, AnnData) — every preset
 - `latex_compile` tool (`.tex` → PDF, bibtex/biber-aware) — every preset
+- `pdf_to_markdown` tool (PDF → Markdown, via [pdf-inspector](https://github.com/firecrawl/pdf-inspector)) for literature-survey conversion of downloaded papers — every preset
 - `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload — every preset
 - `workflow` tool over a ~330-template research-task catalogue — every preset
 - Academic search: Parallel, Firecrawl, Scite (MCP connectors) and `consensus_search` (native REST tool) — **ResearchCraft preset only**
@@ -128,6 +129,17 @@ The tool finds `python-helpers/.venv` automatically. Override with `RESEARCHCRAF
 ## LaTeX
 
 `latex_compile` compiles a `.tex` file to PDF: `latexmk` when it's on `PATH` (handles bibtex/biber automatically), otherwise a `pdflatex`/`xelatex`/`lualatex` fallback with a bibtex/biber pass when the source needs one. Requires a TeX Live (or similar) install.
+
+## PDF to Markdown
+
+`pdf_to_markdown` converts a PDF to Markdown using [pdf-inspector](https://github.com/firecrawl/pdf-inspector) (`@firecrawl/pdf-inspector`, native Rust/napi) — built for literature-survey workflows where a lot of downloaded papers need converting. It classifies the PDF (text-based/scanned/image-based/mixed) and, for text-based PDFs, extracts headings, lists, tables, and reading order locally in milliseconds without OCR.
+
+- `path` — the PDF to convert.
+- `pages` — optional 1-indexed page numbers to limit conversion to.
+- `write_to` — workspace-relative output path for the Markdown. Recommended for anything but a short excerpt; converting many papers with `write_to` set keeps each paper's full text out of the conversation and on disk instead (e.g. `literature/<author>-<year>.md`).
+- `ocr` — selectively OCR pages flagged as low quality (mode `Auto`). Requires the PDFium and ONNX Runtime shared libraries installed locally (set `PDFIUM_LIB_PATH`/`ORT_DYLIB_PATH` if they're not on the library search path — see [pdf-inspector's OCR runtime guide](https://github.com/firecrawl/pdf-inspector/blob/main/docs/ocr-runtime.md)); without them, a scanned PDF still comes back with `pages_needing_ocr` populated, so the agent knows to fall back to `subagent_vision` on rendered page images instead.
+
+Prebuilt native binaries ship as `optionalDependencies` for Linux (x64/ARM64, glibc and musl), macOS (ARM64), and Windows (x64) — a plain `npm install` picks up the right one, no Rust toolchain needed.
 
 ## Remote compute
 
