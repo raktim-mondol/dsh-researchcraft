@@ -298,3 +298,9 @@
 # rather than global, since it's specifically an academic-search capability.
 - id: consensus-search
   name: dsh-researchcraft/consensus-search
+
+# Resolves a DOI to an open-access PDF via the Unpaywall API and saves it to
+# the workspace (or downloads a direct URL) — see paper-download.js. Kept
+# here rather than global for the same reason as consensus-search above.
+- id: paper-download
+  name: dsh-researchcraft/paper-download

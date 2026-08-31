@@ -55,19 +55,19 @@ The preset picker remembers your last choice per browser, so you'll typically on
 - `pdf_to_markdown` tool (PDF → Markdown, via [pdf-inspector](https://github.com/firecrawl/pdf-inspector)) for literature-survey conversion of downloaded papers — every preset
 - `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload — every preset
 - `workflow` tool over a ~330-template research-task catalogue — every preset
-- Academic search: Parallel, Firecrawl, Scite (MCP connectors) and `consensus_search` (native REST tool) — **ResearchCraft preset only**
+- Academic search: Parallel, Firecrawl, Scite (MCP connectors), `consensus_search` (native REST tool), and `paper_download` (Unpaywall open-access PDF resolver) — **ResearchCraft preset only**
 - A **Settings → ResearchCraft API keys** page for all of the above — no shell env vars required
 
 ## API keys
 
-Every credential below (`PARALLEL_API_KEY`, `FIRECRAWL_API_KEY`, `CONSENSUS_API_KEY`, `SCITE_API_KEY`, `GEMINI_API_KEY`, `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`, `RUNPOD_API_KEY`) can be set two ways:
+Every credential below (`PARALLEL_API_KEY`, `FIRECRAWL_API_KEY`, `CONSENSUS_API_KEY`, `SCITE_API_KEY`, `UNPAYWALL_EMAIL`, `GEMINI_API_KEY`, `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`, `RUNPOD_API_KEY`) can be set two ways:
 
 - **Settings → ResearchCraft API keys** in the DSH web UI — type a key, Save. Persisted in the profile's `settings.yaml`; a blank field always means "keep the current value", Clear removes it.
 - **Shell environment variable** — takes priority over Settings when both are set.
 
 The same Settings page also has an **Image model** dropdown for `IMAGE_MODEL` — not a credential, so it isn't password-masked and applies immediately on selection rather than needing Save (see [Image generation](#image-generation)). It also has two more model-id dropdowns, **Complex-task model** (`SUBAGENT_MODEL_COMPLEX`) and **Image-reading model** (`SUBAGENT_MODEL_VISION`) — not credentials either, but these two behave like the MCP connectors below, not like Image model: they need a restart to apply (see [Subagent model routing](#subagent-model-routing)).
 
-Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`, `consensus_search`) pick up a Settings change on the very next call, no restart needed.
+Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`, `consensus_search`, `paper_download`) pick up a Settings change on the very next call, no restart needed.
 
 The three MCP connectors and the two subagent-model fields are different: the `researchcraft` agent preset mounts once as a standing composition shared by every chat session for the life of the running `dsh` process, so a change only reaches them after you **stop and restart `dsh` itself** — a new chat session on the same running process is not enough. `consensus_search` isn't an MCP connector — see below — so it doesn't have this restart requirement.
 
@@ -84,6 +84,8 @@ Three literature/web MCP servers are wired into the `researchcraft` preset and s
 | [Scite](https://scite.ai) — Smart Citations, retraction/correction checks, evidence datasets (patents, clinical trials, grants, drug safety, …) | `SCITE_API_KEY` (required) | Connector stays disabled |
 
 [Consensus](https://consensus.app) is a native `consensus_search` tool (not an MCP connector) over its `GET /v1/search` REST API — plain `x-api-key` auth, no OAuth. Requires `CONSENSUS_API_KEY` (required — the tool returns a clear error, not a disabled connector, when unset). Supports the API's full filter set: study type, year/month range, sample size, journal quartile (SJR), citation count, study duration, domain, country, publisher, open-access/preprint/human/controlled/clinical-guideline flags, and pagination.
+
+[Unpaywall](https://unpaywall.org) backs `paper_download` (also a native REST tool, not an MCP connector): given a DOI, it resolves the best open-access location and the tool downloads that PDF straight into the workspace (or downloads a direct URL you already have, no DOI needed). Requires `UNPAYWALL_EMAIL` — Unpaywall's API asks callers to identify themselves with a real contact email; the tool returns a clear error, not a disabled connector, when unset, and never invents one on your behalf. When a DOI has no open-access copy, the tool returns a plain "paywalled" result (with the landing-page URL) rather than an error — the agent is steered to report that honestly instead of inferring the paper's content from a search snippet. The response is also checked against the PDF magic bytes before being saved, so a login/CAPTCHA page returned instead of the real file surfaces as a clear error rather than a corrupt "PDF."
 
 Set any of these via Settings → ResearchCraft API keys or the matching env var (see [API keys](#api-keys)). `SCITE_API_KEY` is an `mcp`-scoped key from [scite.ai/users/me/api](https://scite.ai/users/me/api) — Scite's own documented non-interactive path for MCP clients, sent as a bearer token to `https://api.scite.ai/mcp` (no OAuth or token exchange). Scite also offers an OAuth flow, but only for its first-party ChatGPT/Claude plugin and other interactive clients — not relevant here.
 
@@ -130,7 +132,11 @@ The tool finds `python-helpers/.venv` automatically. Override with `RESEARCHCRAF
 
 `latex_compile` compiles a `.tex` file to PDF: `latexmk` when it's on `PATH` (handles bibtex/biber automatically), otherwise a `pdflatex`/`xelatex`/`lualatex` fallback with a bibtex/biber pass when the source needs one. Requires a TeX Live (or similar) install.
 
-## PDF to Markdown
+## Downloading and reading papers
+
+Two tools cover the full loop for actually reading a paper rather than just its abstract: `paper_download` (ResearchCraft preset only — see [Academic search](#academic-search)) gets the PDF onto disk, and `pdf_to_markdown` (every preset) turns it into readable text.
+
+### PDF to Markdown
 
 `pdf_to_markdown` converts a PDF to Markdown using [pdf-inspector](https://github.com/firecrawl/pdf-inspector) (`@firecrawl/pdf-inspector`, native Rust/napi) — built for literature-survey workflows where a lot of downloaded papers need converting. It classifies the PDF (text-based/scanned/image-based/mixed) and, for text-based PDFs, extracts headings, lists, tables, and reading order locally in milliseconds without OCR.
 

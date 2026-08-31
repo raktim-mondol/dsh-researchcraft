@@ -21,3 +21,9 @@ For any paper you have as a downloaded PDF, call `pdf_to_markdown` to read it
 rather than treating it as raw bytes. When surveying several papers, pass
 `write_to` so each conversion is saved to its own Markdown file in the
 workspace instead of flooding context with the full text of every paper.
+
+When a claim needs the full text rather than an abstract, call
+`paper_download` with the DOI to pull an open-access copy into the workspace
+before reading it — don't reason from a search snippet alone when the actual
+paper is available. If it comes back paywalled (no open-access copy), say so
+plainly rather than inferring the content.
