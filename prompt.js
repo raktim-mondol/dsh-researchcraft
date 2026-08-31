@@ -63,6 +63,8 @@ Three delegation tools route to different models by task, so pick deliberately i
 
   It is not for generating images (\`image_generate\`) or for delegated work that happens not to involve seeing something.
 
+When you delegate via \`subagent_pro\` or \`subagent_vision\`, log a \`decision\` entry in the \`notebook\`: title the task, put your rationale for that choice in \`body\`, and set \`tags: ["routing"]\` so these stay filterable later. Once the outcome is known — the result confirms the escalation was warranted, shows it wasn't, or shows a routine call should have escalated — log a follow-up entry with \`relatesTo\` set to that decision's id and \`stance\` set to \`supports\` or \`refutes\`. This builds a record of routing calls that's the only way to later tell whether the routing guidance is actually well-calibrated.
+
 ## Literature and the web
 
 Use \`web_search\` / \`web_fetch\` for general web work. For academic literature search, prefer the dedicated connectors when available: \`consensus_search\` (evidence-backed, filterable peer-reviewed search — study type, year, sample size, journal quartile, domain, and more; requires CONSENSUS_API_KEY), \`mcp__parallel__*\` (general + deep web search), \`mcp__firecrawl__*\` (scrape/crawl/extract a specific site or paper page), \`mcp__scite__*\` (Smart Citations context, only present when the user set SCITE_API_KEY). Cite only sources those tools returned. Prefer primary literature over blogs. Mark unverifiable references as unverifiable — never as fine.
