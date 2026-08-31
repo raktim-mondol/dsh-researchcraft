@@ -33,21 +33,39 @@
  * mcp-connectors.js). So, like the MCP connector keys, a value changed in
  * Settings or the environment only reaches these two tools after `dsh`
  * itself is stopped and restarted.
+ *
+ * Model ids are resolved synchronously here (inline env/settings lookup,
+ * not the async `resolveEnv()` used elsewhere in this plugin): `ctx.plugin`
+ * validates a mounted child's config against its declared services eagerly,
+ * so `agentOptions.model` has to be a plain string by the time `ctx.plugin`
+ * is called, not a value an outstanding `await` still owns.
+ *
+ * `inject` must list every service a `ctx.plugin()`-mounted child reads,
+ * not just what this module reads directly: Cordis gates `ctx.<service>`
+ * property access per fiber, and mounting `@deepseek-ai/dsh-tool-subagent`
+ * (whose own `inject` includes `tools`/`subagents`/`systemPrompt`/
+ * `sessionProjections`) from inside a fiber that never declared those itself
+ * throws `cannot get property "subagents" without inject` the moment the
+ * child's `apply()` reads `ctx.subagents.getProvider(...)` — a load-time
+ * failure, not a runtime one, so it took the preset down instead of just
+ * these two tools.
  */
 import * as ToolSubagent from '@deepseek-ai/dsh-tool-subagent'
-import { resolveEnv } from './credential-env.js'
+import { getStoredKey } from './settings-keys.js'
 
 export const name = 'dsh-researchcraft-subagent-models'
-export const inject = []
+export const inject = ['tools', 'subagents', 'systemPrompt', 'sessionProjections']
 
 const DEFAULT_COMPLEX_MODEL = 'deepseek-v4-pro'
 const DEFAULT_VISION_MODEL = 'deepseek-v4-flash-vision-exp'
 
-export async function apply(ctx) {
-  const [complexModel, visionModel] = await Promise.all([
-    resolveEnv('SUBAGENT_MODEL_COMPLEX'),
-    resolveEnv('SUBAGENT_MODEL_VISION'),
-  ])
+function resolveEnvSync(name) {
+  return process.env[name]?.trim() || getStoredKey(name)
+}
+
+export function apply(ctx) {
+  const complexModel = resolveEnvSync('SUBAGENT_MODEL_COMPLEX')
+  const visionModel = resolveEnvSync('SUBAGENT_MODEL_VISION')
 
   ctx.plugin(ToolSubagent, {
     provider: 'spawn',

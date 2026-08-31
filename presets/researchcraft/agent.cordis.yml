@@ -223,7 +223,20 @@
     # rather than as static rows so the model ids can come from Settings ->
     # ResearchCraft API keys as well as SUBAGENT_MODEL_COMPLEX/
     # SUBAGENT_MODEL_VISION — see subagent-models.js for the resolution order
-    # and the restart caveat this shares with the MCP connectors above.
+    # and the restart caveat this shares with the MCP connectors below, and
+    # for the `inject` declaration a `ctx.plugin()`-mounted child like this
+    # one needs.
+    #
+    # Needs the `spawn` subagent provider's `agentOptions` capability, added
+    # in `@deepseek-ai/dsh-subagent-spawn-in-process` 0.1.2-alpha.2. On an
+    # older installed harness (`agentPreset.select`'s response stays `ok:
+    # true`, since one child tool failing to mount doesn't take the preset
+    # down) these two silently never reach the model: `ctx.plugin()` schedules
+    # the mount but doesn't run it inline, so the failure surfaces only inside
+    # `@deepseek-ai/dsh-tool-subagent`'s own Fiber execution as `provider
+    # "spawn" does not support child agentOptions` — invisible from here.
+    # `npm view @deepseek-ai/dsh dist-tags` shows whether a newer harness is
+    # available; the "latest" tag can lag behind what this plugin needs.
     - id: subagent-models
       name: dsh-researchcraft/subagent-models
 
