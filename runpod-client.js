@@ -103,14 +103,19 @@ export function makeEphemeralSshKey() {
   }
 }
 
-/** Resolve an SSH endpoint from a pod's runtime ports, with proxy fallback. */
+/**
+ * Resolve an SSH endpoint from a pod, with proxy fallback.
+ *
+ * REST v1's Pod object has no `runtime` field (verified against
+ * https://rest.runpod.io/v1/openapi.json) — the public TCP mapping for port
+ * 22 lives at top-level `portMappings["22"]` (public port) plus `publicIp`,
+ * not a `runtime.ports[]` array. Both are `null`/absent while the pod is
+ * still initializing, or on some community-cloud pods that only expose the
+ * SSH proxy — in either case, fall back to Runpod's proxy host form.
+ */
 export function resolveSshEndpoint(pod) {
-  const ports = pod.runtime?.ports ?? []
-  const sshPort = ports.find((p) => p.privatePort === 22 && p.publicPort && p.ip)
-  if (sshPort?.ip && sshPort.publicPort) return { host: sshPort.ip, port: sshPort.publicPort, kind: 'tcp' }
-  const tcp22 = ports.find((p) => (p.privatePort === 22 || p.type === 'tcp') && p.publicPort && p.ip)
-  if (tcp22?.ip && tcp22.publicPort) return { host: tcp22.ip, port: tcp22.publicPort, kind: 'tcp' }
-  // Runpod SSH proxy host form used when direct TCP isn't ready yet.
+  const publicPort = pod.portMappings?.['22']
+  if (pod.publicIp && publicPort) return { host: pod.publicIp, port: publicPort, kind: 'tcp' }
   if (pod.id) return { host: `${pod.id}-22.port.proxy.runpod.net`, port: 22, kind: 'proxy' }
   return null
 }

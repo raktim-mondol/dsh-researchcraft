@@ -57,8 +57,15 @@ export function registerKeysSettings(ctx) {
   return scope
 }
 
-/** Read one key's current stored value, or undefined if unset/unregistered. */
+/**
+ * Read one key's current stored value, or undefined if unset/unregistered.
+ * Trimmed the same way resolveEnv() trims process.env — otherwise a stray
+ * leading/trailing space or newline from copy-pasting a token into the
+ * Settings field (e.g. a trailing newline copied from a terminal or a
+ * dashboard's "copy" button) is stored and returned verbatim: the UI shows
+ * "configured" but the credential silently fails to authenticate.
+ */
 export function getStoredKey(name) {
-  const value = scope?.get()?.[name]
+  const value = scope?.get()?.[name]?.trim()
   return typeof value === 'string' && value.length > 0 ? value : undefined
 }
