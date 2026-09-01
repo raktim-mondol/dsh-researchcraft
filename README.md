@@ -45,7 +45,16 @@ The preset picker remembers your last choice per browser, so you'll typically on
 ## What it adds
 
 - **ResearchCraft agent preset** — persona, research system prompt (notebook discipline, specialist roster, connector guidance), standard coding tools, and the 4 academic MCP connectors below. Select it explicitly per chat — see [Run](#run).
-- Scientific skills catalogue (`scientific-agent-skills`, or `RESEARCHCRAFT_SKILLS_DIR`) — available on every preset
+- Scientific skills catalogue vendored into `skills/` from six open-source K-Dense-AI projects, bundled with the plugin like the specialist briefs below — no separate checkout or setup needed (see [NOTICE](NOTICE) for exactly what was changed vs. each source):
+  - 140 domain skills (chemistry, genomics/bioinformatics, imaging, stats, ML, writing, …) — [`scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills)
+  - 16 research-discipline/methodology skills (question framing, pre-registration, verification-before-claiming, red-team review, …) — [`science-superpowers`](https://github.com/K-Dense-AI/science-superpowers)
+  - 503 profession-specific expert-reasoning skills (accelerator-physicist, zoologist, actuarial-scientist, …), converted from AGENTS.md profiles — [`scientific-agents`](https://github.com/K-Dense-AI/scientific-agents)
+  - 23 small-molecule/protein-therapeutics skills (autodock-vina, retrosynthesis, protein-binder-design, …) — [`drug-discovery-agent-skills`](https://github.com/K-Dense-AI/drug-discovery-agent-skills)
+  - a `docx-editor-zotero` skill (edit `.docx` files without breaking Zotero citations) — adapted from [`claude-scientific-writer`](https://github.com/K-Dense-AI/claude-scientific-writer)
+  - an `agentic-data-science-pipeline` skill (plan/review/implement/verify/reflect loop for large multi-stage tasks) — adapted from [`agentic-data-scientist`](https://github.com/K-Dense-AI/agentic-data-scientist)
+  - a `hyperparameter-optimization` skill (pre-registered, verify-before-claiming search loop for tuning a DL/LLM model) — adapted from [`karpathy`](https://github.com/K-Dense-AI/karpathy)
+
+  `RESEARCHCRAFT_SKILLS_DIR` (or a `~/scientific-agent-skills/skills` checkout) still works as an override if you want a different catalogue instead — available on every preset
 - `notebook` tool — log, read, and export a living lab notebook (JSONL under `<cwd>/.dsh/notebook/`), shared across a subagent delegation tree, with a zip-bundle export alongside the plain Markdown one — every preset
 - `scientific_result` tool — a structured, schema-validated "final finding" card (table or statistical-test), distinct from the notebook's running log — every preset
 - Specialist briefs (code-reviewer, literature-researcher, …) for the DSH `subagent` tool, plus `subagent_pro` and `subagent_vision` — two more delegation tools pinned to a different model for unusually heavy reasoning and image-reading tasks respectively — see [Subagent model routing](#subagent-model-routing) — every preset
@@ -206,4 +215,4 @@ npm run build # after any client/ change — rebuilds lib/client.js
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Scientific skills are seeded from the open-source [`K-Dense-AI/scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills) catalogue (MIT); see [NOTICE](NOTICE).
+MIT — see [LICENSE](LICENSE). Scientific skills are vendored or adapted from seven open-source K-Dense-AI projects (`scientific-agent-skills`, `science-superpowers`, `scientific-agents`, `claude-scientific-writer`, `drug-discovery-agent-skills`, `agentic-data-scientist`, `karpathy`), all MIT; see [NOTICE](NOTICE) for exactly what was copied, renamed, or adapted from each.

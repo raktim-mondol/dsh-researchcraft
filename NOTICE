@@ -6,7 +6,73 @@ catalogue, lab notebook, and specialist subagent briefs as a DeepSeek Harness
 (DSH) profile bundle.
 
 Scientific skills are seeded from the open-source catalogue
-`K-Dense-AI/scientific-agent-skills` (MIT License).
+`K-Dense-AI/scientific-agent-skills` (MIT License) — the full catalogue
+(140 skills) is vendored under `skills/` alongside this plugin's own
+first-party skills. Its `modal` skill (general Modal usage) was renamed to
+`modal-usage` here to avoid colliding with this plugin's own `modal` skill
+(specific to the bundled `modal_run` tool); no other content was changed.
+
+Research-discipline skills (framing-research-questions, preregistering-analysis,
+verifying-results-before-claiming, requesting-red-team-review, and 12 more) are
+vendored under `skills/` from the open-source `K-Dense-AI/science-superpowers`
+catalogue (MIT License), unmodified. That project's Claude Code
+`SessionStart` hook, which force-injects its `using-science-superpowers`
+skill into every session, was not ported — DSH has no equivalent hook
+mechanism — and its guidance was folded into this plugin's own system prompt
+instead (see the "Research discipline" section of `prompt.js`).
+
+503 profession-specific expert-reasoning skills (accelerator-physicist,
+zoologist, marine-biologist, and so on) are vendored under `skills/` from the
+open-source `K-Dense-AI/scientific-agents` catalogue (MIT License). Each was
+mechanically converted from that repo's `agents/<slug>.md` (Claude Code
+subagent format) into `SKILL.md` by adding a `license`/`metadata` block to the
+existing `name`/`description` frontmatter; the body content is unchanged.
+
+The `docx-editor-zotero` skill (`skills/docx-editor-zotero`) is adapted from
+the `extensions/docx-editor-zotero/` extension in the open-source
+`K-Dense-AI/claude-scientific-writer` repository (MIT License): its
+`docx-editor-zotero.md` became `SKILL.md` (frontmatter added; content
+otherwise unchanged), and its two Python scripts and `EXAMPLES.md` were
+copied into `scripts/` and `references/` — with one fix:
+`zotero_docx_preserver.py` had a malformed f-string (a stray `}` in a
+`.get(...)` call) that failed to parse under Python 3.12+; corrected to match
+the identical pattern used everywhere else in that file. That repository's 26 other
+skills were not vendored — every one of them duplicates a skill already
+vendored here from `K-Dense-AI/scientific-agent-skills` above.
+
+23 small-molecule and protein-therapeutics skills (autodock-vina,
+binding-site-analysis, retrosynthesis, protein-binder-design, and 19 more)
+are vendored under `skills/` from the open-source
+`K-Dense-AI/drug-discovery-agent-skills` catalogue (MIT License), unmodified.
+That catalogue's other 14 skills (rdkit, datamol, medchem, pytdc, esm, and 9
+more) were not vendored — this plugin already has a same-named skill for
+each from `K-Dense-AI/scientific-agent-skills` above; the two catalogues
+wrote independent, differently-detailed versions of those particular skills,
+and rather than pick a winner or maintain both under different names, the
+already-vendored version was kept as-is.
+
+The `agentic-data-science-pipeline` skill (`skills/agentic-data-science-pipeline`)
+adapts the plan → implement → verify → reflect agent architecture from the
+open-source `K-Dense-AI/agentic-data-scientist` project (MIT License): its
+Google ADK / Claude Agent SDK orchestration code was not ported (it
+reimplements what this plugin's `subagent`/`todo`/`notebook` tools already
+do), but its 11 per-role prompt files (`prompts/base/*.md`) and its two
+bioinformatics domain-specialization notes (`prompts/domain/bioinformatics/`)
+were copied into `references/` largely verbatim as detailed role briefs,
+alongside a new `SKILL.md` mapping the loop onto this plugin's own tools.
+One near-duplicate file (`plan_generator.md`, an alternate draft of
+`plan_maker.md`) was dropped to avoid two conflicting versions of the same
+role.
+
+The `hyperparameter-optimization` skill (`skills/hyperparameter-optimization`)
+is a fresh adaptation of the agentic-ML-engineer loop described in the
+open-source `K-Dense-AI/karpathy` project (MIT License) — no file from that
+repository was copied. Its Python package (Google ADK + Claude Agent SDK,
+a `delegate_task` tool) reimplements this plugin's own `subagent` delegation
+and was not ported; only the workflow idea (resource-aware, pre-registered,
+verify-before-claiming hyperparameter search) was carried over, rewritten
+for this plugin's own tools and narrowed to the hyperparameter-tuning use
+case.
 
 The `python-helpers/` scientific-file-format decoders (chemistry, structure,
 mass spec, arrays, imaging, AnnData) and the `workflows.json` research-task
