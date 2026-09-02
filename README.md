@@ -38,13 +38,13 @@ Opens the Harness web UI (typically `http://127.0.0.1:3080`).
 2. Click the preset selector at the top of the message box (reads "PTC mode", "Standard mode", or similar by default).
 3. Choose **ResearchCraft** from the list.
 
-The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), and academic search (`mcp__parallel__*`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, pdf_to_markdown, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset.
+The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), and academic search (`mcp__parallel__*`, `parallel_search`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, pdf_to_markdown, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset.
 
 The preset picker remembers your last choice per browser, so you'll typically only need to do this once.
 
 ## What it adds
 
-- **ResearchCraft agent preset** — persona, research system prompt (notebook discipline, specialist roster, connector guidance), standard coding tools, and the 4 academic MCP connectors below. Select it explicitly per chat — see [Run](#run).
+- **ResearchCraft agent preset** — persona, research system prompt (notebook discipline, specialist roster, connector guidance), standard coding tools, and the academic search connectors below. Select it explicitly per chat — see [Run](#run).
 - Scientific skills catalogue vendored into `skills/` from six open-source K-Dense-AI projects, bundled with the plugin like the specialist briefs below — no separate checkout or setup needed (see [NOTICE](NOTICE) for exactly what was changed vs. each source):
   - 140 domain skills (chemistry, genomics/bioinformatics, imaging, stats, ML, writing, …) — [`scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills)
   - 16 research-discipline/methodology skills (question framing, pre-registration, verification-before-claiming, red-team review, …) — [`science-superpowers`](https://github.com/K-Dense-AI/science-superpowers)
@@ -64,7 +64,7 @@ The preset picker remembers your last choice per browser, so you'll typically on
 - `pdf_to_markdown` tool (PDF → Markdown, via [pdf-inspector](https://github.com/firecrawl/pdf-inspector)) for literature-survey conversion of downloaded papers — every preset
 - `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload, plus bundled `modal`/`runpod` skills covering the rest of each CLI (Serverless endpoints, volumes/secrets, Hub templates, …) — see [Remote compute](#remote-compute) — every preset
 - `workflow` tool over a ~330-template research-task catalogue — every preset
-- Academic search: Parallel, Firecrawl, Scite (MCP connectors), `consensus_search` (native REST tool), and `paper_download` (Unpaywall open-access PDF resolver) — **ResearchCraft preset only**
+- Academic search: Parallel, Firecrawl, Scite (MCP connectors), `parallel_search` / `consensus_search` (native REST tools), and `paper_download` (Unpaywall open-access PDF resolver) — **ResearchCraft preset only**
 - Bundled `agent-browser` skill for interactive web browsing (navigate, log in, fill forms, download datasets), with screenshots delegated to `subagent_vision` — see [Browsing the web](#browsing-the-web) — every preset
 - A **Settings → ResearchCraft API keys** page for all of the above — no shell env vars required
 
@@ -77,11 +77,11 @@ Every credential below (`PARALLEL_API_KEY`, `FIRECRAWL_API_KEY`, `CONSENSUS_API_
 
 The same Settings page also has an **Image model** dropdown for `IMAGE_MODEL` — not a credential, so it isn't password-masked and applies immediately on selection rather than needing Save (see [Image generation](#image-generation)). It also has two more model-id dropdowns, **Complex-task model** (`SUBAGENT_MODEL_COMPLEX`) and **Image-reading model** (`SUBAGENT_MODEL_VISION`) — not credentials either, but these two behave like the MCP connectors below, not like Image model: they need a restart to apply (see [Subagent model routing](#subagent-model-routing)).
 
-Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`, `consensus_search`, `paper_download`) pick up a Settings change on the very next call, no restart needed.
+Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`, `consensus_search`, `parallel_search`, `paper_download`) pick up a Settings change on the very next call, no restart needed.
 
-The three MCP connectors and the two subagent-model fields are different: the `researchcraft` agent preset mounts once as a standing composition shared by every chat session for the life of the running `dsh` process, so a change only reaches them after you **stop and restart `dsh` itself** — a new chat session on the same running process is not enough. `consensus_search` isn't an MCP connector — see below — so it doesn't have this restart requirement.
+The three MCP connectors and the two subagent-model fields are different: the `researchcraft` agent preset mounts once as a standing composition shared by every chat session for the life of the running `dsh` process, so a change only reaches them after you **stop and restart `dsh` itself** — a new chat session on the same running process is not enough. `consensus_search` and `parallel_search` aren't MCP connectors — see below — so they don't have this restart requirement.
 
-**Also make sure the chat session is actually on the ResearchCraft preset.** Both the MCP connectors and `consensus_search` are wired into the `researchcraft` agent preset only; a session left on the default preset (Standard/PTC/etc.) has none of them, and calling one fails with `tools[name] is not a function`. Check the preset selector next to the session title (top of the message box for a new chat, top-left of an existing one) reads "ResearchCraft" before asking the agent to search.
+**Also make sure the chat session is actually on the ResearchCraft preset.** Both the MCP connectors and the native search tools (`consensus_search`, `parallel_search`) are wired into the `researchcraft` agent preset only; a session left on the default preset (Standard/PTC/etc.) has none of them, and calling one fails with `tools[name] is not a function`. Check the preset selector next to the session title (top of the message box for a new chat, top-left of an existing one) reads "ResearchCraft" before asking the agent to search.
 
 ## Academic search
 
@@ -89,9 +89,20 @@ Three literature/web MCP servers are wired into the `researchcraft` preset and s
 
 | Connector | Key | Without it |
 |---|---|---|
-| [Parallel](https://parallel.ai) — general + deep web search | `PARALLEL_API_KEY` (optional) | Works keyless, rate-limited |
+| [Parallel](https://parallel.ai) — general + deep web search (`mcp__parallel__web_search` / `web_fetch`) | `PARALLEL_API_KEY` (optional) | Works keyless, rate-limited. MCP search always runs in `basic` mode. |
 | [Firecrawl](https://firecrawl.dev) — scrape/crawl/extract | `FIRECRAWL_API_KEY` (optional) | Works keyless, rate-limited |
 | [Scite](https://scite.ai) — Smart Citations, retraction/correction checks, evidence datasets (patents, clinical trials, grants, drug safety, …) | `SCITE_API_KEY` (required) | Connector stays disabled |
+
+`parallel_search` is a native REST tool over Parallel's `POST /v1/search` API (`x-api-key` auth). It requires `PARALLEL_API_KEY` and is the way to pick a **search mode per call** — the MCP `web_search` tool cannot. Pass `objective`, 1–5 keyword `search_queries`, and `mode`:
+
+| Mode | Latency | Best for |
+|---|---|---|
+| `turbo` | ~250ms | Simple fact lookups, current numbers, high-volume pre-filtering. English and Japanese queries only. |
+| `fast` | ~700ms | Recommended default for most agent loops (interactive lookup, tool-calling). |
+| `basic` | ~1s | Longer excerpts per source; 2–3 high-quality queries. Same mode the MCP search tool always uses. |
+| `advanced` | ~3s | Multi-hop retrieval for literature surveys, deep research, code-review background. |
+
+The system prompt steers the agent to use `fast` when unsure, `advanced` for multi-hop literature work, and `mcp__parallel__web_search` only when no key is set (or when `basic` is already the right mode). A Settings-changed `PARALLEL_API_KEY` takes effect on the next `parallel_search` call rather than needing a restart.
 
 [Consensus](https://consensus.app) is a native `consensus_search` tool (not an MCP connector) over its `GET /v1/search` REST API — plain `x-api-key` auth, no OAuth. Requires `CONSENSUS_API_KEY` (required — the tool returns a clear error, not a disabled connector, when unset). Supports the API's full filter set: study type, year/month range, sample size, journal quartile (SJR), citation count, study duration, domain, country, publisher, open-access/preprint/human/controlled/clinical-guideline flags, and pagination.
 

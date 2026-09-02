@@ -1,0 +1,129 @@
+/**
+ * Parallel Search REST API (POST https://api.parallel.ai/v1/search) —
+ * `x-api-key` auth. Registered as a preset row (not global) alongside the
+ * Parallel MCP connector in mcp-connectors.js. The MCP `web_search` tool
+ * does not accept `mode` (connection-level only, and ignored without a key);
+ * this native tool is how the agent picks turbo/fast/basic/advanced per call.
+ * Resolves PARALLEL_API_KEY via resolveEnv() per call, so a key saved in
+ * Settings takes effect on the next call — no restart needed.
+ */
+import { defineTool } from '@deepseek-ai/dsh-tools'
+import { resolveEnv } from './credential-env.js'
+
+const API_URL = 'https://api.parallel.ai/v1/search'
+const MODES = ['turbo', 'fast', 'basic', 'advanced']
+
+function renderResult(r) {
+  const bits = [`**${r.title || r.url}**`]
+  if (r.publish_date) bits.push(r.publish_date)
+  if (r.url) bits.push(r.url)
+  if (Array.isArray(r.excerpts) && r.excerpts.length) {
+    bits.push(r.excerpts.filter(Boolean).join('\n\n'))
+  }
+  return bits.join('\n')
+}
+
+function render(value) {
+  if (value.error) {
+    return [{ type: 'text', text: `Error: ${value.error}` }]
+  }
+  if (!Array.isArray(value.results) || value.results.length === 0) {
+    return [{ type: 'text', text: 'No results.' }]
+  }
+  const lines = value.results.map((r, i) => `${i + 1}. ${renderResult(r)}`)
+  if (value.mode) lines.unshift(`_mode: ${value.mode}_`)
+  return [{ type: 'text', text: lines.join('\n\n') }]
+}
+
+export const name = 'dsh-researchcraft-parallel-search'
+export const inject = ['tools']
+
+/** Register the Parallel web-search tool with per-call mode selection. */
+export function apply(ctx) {
+  ctx.tools.register(defineTool({
+    name: 'parallel_search',
+    description: [
+      'Search the web via the Parallel Search API and return ranked URLs with LLM-oriented excerpts.',
+      'Requires PARALLEL_API_KEY (Settings -> ResearchCraft API keys, or env).',
+      'Always pass `mode` — pick it for the task, do not default blindly:',
+      '`turbo` (~250ms) simple fact lookups / current numbers (English and Japanese queries only);',
+      '`fast` (~700ms) recommended default for most agent loops;',
+      '`basic` (~1s) longer excerpts per source, best with 2-3 keyword queries;',
+      '`advanced` (~3s) multi-hop retrieval for literature surveys and deep research.',
+      'Pass `objective` (one standalone sentence naming the entity/topic) plus 1-5 keyword',
+      '`search_queries` of 3-6 words each — not sentences, not site: operators; 2-3 queries is best.',
+      'If PARALLEL_API_KEY is unset, use mcp__parallel__web_search instead (keyless, always basic mode).',
+      'Prefer consensus_search over this for filterable peer-reviewed literature specifically.',
+    ].join(' '),
+    parameters: {
+      objective: {
+        type: 'string',
+        required: true,
+        description: 'Natural-language search goal in one standalone sentence. Name the key entity or topic. Include freshness or source preferences here rather than as operators.',
+      },
+      search_queries: {
+        type: 'array',
+        items: { type: 'string' },
+        required: true,
+        description: '1-5 keyword queries, 3-6 words each (2-3 is best). Include the key entity in every query. Vary names, synonyms, or angles. Not sentences, instructions, or site: operators.',
+      },
+      mode: {
+        type: 'string',
+        enum: MODES,
+        required: true,
+        description: 'Search mode: turbo (simple lookups, EN/JA only), fast (most agent loops), basic (longer excerpts), advanced (multi-hop / deep research).',
+      },
+      max_chars_total: {
+        type: 'number',
+        description: 'Optional upper bound on total excerpt characters across all results.',
+      },
+    },
+    output: {
+      schema: { type: 'json' },
+      render: (_args, value) => render(value),
+    },
+    async execute(args) {
+      const key = await resolveEnv('PARALLEL_API_KEY')
+      if (!key) {
+        return {
+          error: 'PARALLEL_API_KEY is not set (Settings -> ResearchCraft API keys, or the matching env var). Use mcp__parallel__web_search instead — it works keyless, always in basic mode.',
+        }
+      }
+      const queries = (args.search_queries || []).map((q) => String(q).trim()).filter(Boolean)
+      if (!queries.length) {
+        return { error: 'search_queries must contain at least one non-empty query.' }
+      }
+      const mode = String(args.mode || '').trim()
+      if (!MODES.includes(mode)) {
+        return { error: `mode must be one of ${MODES.join(', ')}.` }
+      }
+      const body = {
+        objective: String(args.objective || '').trim(),
+        search_queries: queries.slice(0, 5),
+        mode,
+      }
+      if (!body.objective) {
+        return { error: 'objective is required.' }
+      }
+      if (args.max_chars_total != null) body.max_chars_total = Number(args.max_chars_total)
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+        },
+        body: JSON.stringify(body),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const message = payload?.error?.message ?? payload?.detail ?? payload?.message
+        return { error: `Parallel Search API error ${res.status}`, status: res.status, detail: message ?? payload }
+      }
+      return { ...payload, mode }
+    },
+    presentCall(args) {
+      const q = Array.isArray(args.search_queries) ? args.search_queries.filter(Boolean)[0] : ''
+      return { card: 'generic', title: `Parallel (${args.mode ?? 'search'}): ${q || args.objective || ''}`, kind: 'search' }
+    },
+  }))
+}

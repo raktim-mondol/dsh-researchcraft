@@ -13,7 +13,11 @@
  * the correct preset). `dsh-mcp-client`'s own config is fixed per instance,
  * and env vars have the same restart requirement.
  *
- * Parallel and Firecrawl work keyless (rate-limited). Scite requires a key:
+ * Parallel and Firecrawl work keyless (rate-limited). The Parallel MCP
+ * `web_search` tool always runs in `basic` mode and does not accept a per-call
+ * `mode` argument (connection-level overrides need a key and pin every call).
+ * Per-call turbo/fast/basic/advanced selection is the native `parallel_search`
+ * REST tool in parallel-search.js. Scite requires a key:
  * its hosted MCP server (https://api.scite.ai/mcp) has three access paths
  * (see https://docs.scite.ai/mcp) — the first-party ChatGPT/Claude
  * plugin/connector (OAuth, those platforms only), an interactive MCP client

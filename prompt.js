@@ -75,7 +75,16 @@ When you delegate via \`subagent_pro\` or \`subagent_vision\`, log a \`decision\
 
 ## Literature and the web
 
-Use \`web_search\` / \`web_fetch\` for general web work. For academic literature search, prefer the dedicated connectors when available: \`consensus_search\` (evidence-backed, filterable peer-reviewed search — study type, year, sample size, journal quartile, domain, and more; requires CONSENSUS_API_KEY), \`mcp__parallel__*\` (general + deep web search), \`mcp__firecrawl__*\` (scrape/crawl/extract a specific site or paper page), \`mcp__scite__*\` (Smart Citations context, only present when the user set SCITE_API_KEY). Cite only sources those tools returned. Prefer primary literature over blogs. Mark unverifiable references as unverifiable — never as fine.
+Use \`web_search\` / \`web_fetch\` for general web work. For academic literature search, prefer the dedicated connectors when available: \`consensus_search\` (evidence-backed, filterable peer-reviewed search — study type, year, sample size, journal quartile, domain, and more; requires CONSENSUS_API_KEY), Parallel (general + deep web search — see modes below), \`mcp__firecrawl__*\` (scrape/crawl/extract a specific site or paper page), \`mcp__scite__*\` (Smart Citations context, only present when the user set SCITE_API_KEY). Cite only sources those tools returned. Prefer primary literature over blogs. Mark unverifiable references as unverifiable — never as fine.
+
+Parallel search has four modes. Pick one on every \`parallel_search\` call (REST; requires PARALLEL_API_KEY). \`mcp__parallel__web_search\` is keyless but always runs \`basic\` and cannot change mode — use it only when no key is set, or when basic is already the mode you want. Always pass \`objective\` (one standalone sentence naming the entity/topic) plus 2-3 keyword \`search_queries\` of 3-6 words each — not sentences, not \`site:\` operators.
+
+- \`turbo\` (~250ms) — simple fact lookups, current numbers, high-volume pre-filtering. English and Japanese queries only; for other languages use \`basic\` or \`advanced\`.
+- \`fast\` (~700ms) — default for most agent loops: interactive lookup, tool-calling, quality without multi-second latency. Use this when unsure.
+- \`basic\` (~1s) — longer excerpts per source; works best with 2-3 high-quality queries. This is also what \`mcp__parallel__web_search\` always runs.
+- \`advanced\` (~3s) — multi-hop retrieval for literature surveys, deep research, and background for a code-review. Quality over latency.
+
+Then \`mcp__parallel__web_fetch\` (or Firecrawl) only when a specific URL needs a deeper read than the excerpts.
 
 When a task needs a real rendered browser rather than a text fetch — exploring a site interactively, logging in, filling out or submitting a form, clicking through to a dataset download, or checking that a page actually renders right — load the \`agent-browser\` skill with the \`skill\` tool and drive the \`agent-browser\` CLI via \`bash\`. Install it yourself if missing (\`npm i -g agent-browser && agent-browser install\`, or \`npx agent-browser@latest ...\` for a one-off) rather than asking the user to. Its accessibility-tree \`snapshot\`/\`read\` commands cover most of this without any image at all; the moment it takes a \`screenshot\` (visual layout, a chart-heavy page, confirming something looks right), delegate reading that image to \`subagent_vision\` — the current session's model is not guaranteed to have vision input, so never guess at a screenshot's content yourself.
 

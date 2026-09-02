@@ -302,6 +302,13 @@
 - id: mcp-connectors
   name: dsh-researchcraft/mcp-connectors
 
+# Parallel Search REST (x-api-key auth) — per-call `mode` (turbo/fast/basic/
+# advanced). The MCP `web_search` tool cannot set mode; this is how the
+# agent picks one. See parallel-search.js. Kept in this preset alongside
+# the connectors above rather than global, same reason as consensus-search.
+- id: parallel-search
+  name: dsh-researchcraft/parallel-search
+
 # Consensus is a plain REST tool (x-api-key auth), not an MCP client — see
 # consensus-search.js. Kept in this preset alongside the connectors above
 # rather than global, since it's specifically an academic-search capability.

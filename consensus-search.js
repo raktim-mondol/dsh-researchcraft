@@ -82,8 +82,8 @@ export function apply(ctx) {
     description: [
       'Search 220M+ peer-reviewed papers via the Consensus API — evidence-backed answers over the academic literature,',
       'with real filters (study type, year, sample size, journal quartile, domain, human/controlled/open-access, …).',
-      'Requires CONSENSUS_API_KEY (Settings -> ResearchCraft API keys, or env). Prefer this over mcp__parallel__*/',
-      'mcp__firecrawl__* for a literature search specifically — it returns structured, filterable, peer-reviewed results',
+      'Requires CONSENSUS_API_KEY (Settings -> ResearchCraft API keys, or env). Prefer this over parallel_search /',
+      'mcp__parallel__*/mcp__firecrawl__* for a literature search specifically — it returns structured, filterable, peer-reviewed results',
       'with per-paper takeaways, not general web pages.',
     ].join(' '),
     parameters: {
