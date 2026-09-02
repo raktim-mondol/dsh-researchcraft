@@ -27,7 +27,10 @@ queries. Do not call `mcp__parallel__web_search` when `parallel_search`
 works — it is the same search job locked to `basic` mode; use it only if
 `parallel_search` is missing or failed. Pass `objective` plus 2-3 keyword
 `search_queries` of 3-6 words each. Do not invent a mode the tools do not
-support. Do not start a literature search on built-in `web_search`.
+support. Do not start a literature search on built-in `web_search`. Do not
+use built-in `web_fetch` (no fetch provider; it fails with
+`WEB_PROVIDER_UNAVAILABLE`). To read a paper or trial page URL, call
+`mcp__firecrawl__firecrawl_scrape` or `mcp__parallel__web_fetch`.
 
 For any paper you have as a downloaded PDF, call `pdf_to_markdown` to read it
 rather than treating it as raw bytes. When surveying several papers, pass
