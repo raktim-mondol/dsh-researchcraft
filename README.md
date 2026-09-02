@@ -89,11 +89,11 @@ Three literature/web MCP servers are wired into the `researchcraft` preset and s
 
 | Connector | Key | Without it |
 |---|---|---|
-| [Parallel](https://parallel.ai) — general + deep web search (`mcp__parallel__web_search` / `web_fetch`) | `PARALLEL_API_KEY` (optional) | Works keyless, rate-limited. MCP search always runs in `basic` mode. |
+| [Parallel](https://parallel.ai) — `mcp__parallel__web_search` (search fallback, always `basic`) and `mcp__parallel__web_fetch` (read a URL) | `PARALLEL_API_KEY` (required) | Connector stays disabled. The key is always sent as a Bearer token so MCP calls are not on the anonymous rate limit. |
 | [Firecrawl](https://firecrawl.dev) — scrape/crawl/extract | `FIRECRAWL_API_KEY` (optional) | Works keyless, rate-limited |
 | [Scite](https://scite.ai) — Smart Citations, retraction/correction checks, evidence datasets (patents, clinical trials, grants, drug safety, …) | `SCITE_API_KEY` (required) | Connector stays disabled |
 
-`parallel_search` is a native REST tool over Parallel's `POST /v1/search` API (`x-api-key` auth). It requires `PARALLEL_API_KEY` and is the way to pick a **search mode per call** — the MCP `web_search` tool cannot. Pass `objective`, 1–5 keyword `search_queries`, and `mode`:
+`parallel_search` is the **primary** Parallel search tool: a native REST call to `POST /v1/search` (`x-api-key` auth). It requires `PARALLEL_API_KEY` and a **`mode` on every call**. `mcp__parallel__web_search` is the same search job locked to `basic` — the agent is steered to use it only if `parallel_search` is missing or errors. `mcp__parallel__web_fetch` is for reading a specific URL, not for search. Pass `objective`, 1–5 keyword `search_queries`, and `mode`:
 
 | Mode | Latency | Best for |
 |---|---|---|
@@ -102,7 +102,7 @@ Three literature/web MCP servers are wired into the `researchcraft` preset and s
 | `basic` | ~1s | Longer excerpts per source; 2–3 high-quality queries. Same mode the MCP search tool always uses. |
 | `advanced` | ~3s | Multi-hop retrieval for literature surveys, deep research, code-review background. |
 
-The system prompt steers the agent to use `fast` when unsure, `advanced` for multi-hop literature work, and `mcp__parallel__web_search` only when no key is set (or when `basic` is already the right mode). A Settings-changed `PARALLEL_API_KEY` takes effect on the next `parallel_search` call rather than needing a restart.
+The system prompt steers the agent to use **both** `consensus_search` and `parallel_search` (`basic` or `advanced`) for peer-reviewed literature, `fast` only for ordinary non-literature lookups, and `mcp__parallel__web_search` only as a fallback when `parallel_search` is unavailable. A Settings-changed `PARALLEL_API_KEY` takes effect on the next `parallel_search` call; the MCP connector still needs a `dsh` restart.
 
 [Consensus](https://consensus.app) is a native `consensus_search` tool (not an MCP connector) over its `GET /v1/search` REST API — plain `x-api-key` auth, no OAuth. Requires `CONSENSUS_API_KEY` (required — the tool returns a clear error, not a disabled connector, when unset). Supports the API's full filter set: study type, year/month range, sample size, journal quartile (SJR), citation count, study duration, domain, country, publisher, open-access/preprint/human/controlled/clinical-guideline flags, and pagination.
 

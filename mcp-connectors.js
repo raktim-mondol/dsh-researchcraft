@@ -13,11 +13,14 @@
  * the correct preset). `dsh-mcp-client`'s own config is fixed per instance,
  * and env vars have the same restart requirement.
  *
- * Parallel and Firecrawl work keyless (rate-limited). The Parallel MCP
- * `web_search` tool always runs in `basic` mode and does not accept a per-call
- * `mode` argument (connection-level overrides need a key and pin every call).
- * Per-call turbo/fast/basic/advanced selection is the native `parallel_search`
- * REST tool in parallel-search.js. Scite requires a key:
+ * Firecrawl works keyless (rate-limited). Parallel MCP does not: it is only
+ * mounted when PARALLEL_API_KEY is set, and that key is always sent as a
+ * Bearer token so it stays off the anonymous rate limit. `mcp__parallel__web_search`
+ * is the same search job as native `parallel_search` but locked to `basic`
+ * mode — keep it as a fallback if the REST tool is missing or fails.
+ * `mcp__parallel__web_fetch` is the extract/read-URL half, not a search tool.
+ * Per-call turbo/fast/basic/advanced selection is `parallel-search.js`.
+ * Scite requires a key:
  * its hosted MCP server (https://api.scite.ai/mcp) has three access paths
  * (see https://docs.scite.ai/mcp) — the first-party ChatGPT/Claude
  * plugin/connector (OAuth, those platforms only), an interactive MCP client
@@ -46,12 +49,14 @@ export async function apply(ctx) {
     resolveEnv('SCITE_API_KEY'),
   ])
 
-  ctx.plugin(McpClient, {
-    serverName: 'parallel',
-    transport: 'streamable-http',
-    url: 'https://search.parallel.ai/mcp',
-    ...(parallelKey ? { headers: { Authorization: `Bearer ${parallelKey}` } } : {}),
-  })
+  if (parallelKey) {
+    ctx.plugin(McpClient, {
+      serverName: 'parallel',
+      transport: 'streamable-http',
+      url: 'https://search.parallel.ai/mcp',
+      headers: { Authorization: `Bearer ${parallelKey}` },
+    })
+  }
 
   ctx.plugin(McpClient, {
     serverName: 'firecrawl',

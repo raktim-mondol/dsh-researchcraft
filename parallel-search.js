@@ -1,11 +1,11 @@
 /**
  * Parallel Search REST API (POST https://api.parallel.ai/v1/search) —
- * `x-api-key` auth. Registered as a preset row (not global) alongside the
- * Parallel MCP connector in mcp-connectors.js. The MCP `web_search` tool
- * does not accept `mode` (connection-level only, and ignored without a key);
- * this native tool is how the agent picks turbo/fast/basic/advanced per call.
- * Resolves PARALLEL_API_KEY via resolveEnv() per call, so a key saved in
- * Settings takes effect on the next call — no restart needed.
+ * `x-api-key` auth. This is the primary Parallel search tool: the agent
+ * picks turbo/fast/basic/advanced per call. The MCP `web_search` tool in
+ * mcp-connectors.js is the same search job locked to `basic` mode and is
+ * only a fallback if this tool is missing or fails. Resolves
+ * PARALLEL_API_KEY via resolveEnv() per call, so a key saved in Settings
+ * takes effect on the next call — no restart needed.
  */
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { resolveEnv } from './credential-env.js'
@@ -43,17 +43,18 @@ export function apply(ctx) {
   ctx.tools.register(defineTool({
     name: 'parallel_search',
     description: [
-      'Search the web via the Parallel Search API and return ranked URLs with LLM-oriented excerpts.',
+      'Primary Parallel web search: ranked URLs with LLM-oriented excerpts. Prefer this over mcp__parallel__web_search,',
+      'which is the same search job locked to basic mode — only fall back to that MCP tool if this one is missing or errors.',
       'Requires PARALLEL_API_KEY (Settings -> ResearchCraft API keys, or env).',
       'Always pass `mode` — pick it for the task, do not default blindly:',
       '`turbo` (~250ms) simple fact lookups / current numbers (English and Japanese queries only);',
-      '`fast` (~700ms) recommended default for most agent loops;',
+      '`fast` (~700ms) ordinary non-literature lookups;',
       '`basic` (~1s) longer excerpts per source, best with 2-3 keyword queries;',
       '`advanced` (~3s) multi-hop retrieval for literature surveys and deep research.',
       'Pass `objective` (one standalone sentence naming the entity/topic) plus 1-5 keyword',
       '`search_queries` of 3-6 words each — not sentences, not site: operators; 2-3 queries is best.',
-      'If PARALLEL_API_KEY is unset, use mcp__parallel__web_search instead (keyless, always basic mode).',
-      'Prefer consensus_search over this for filterable peer-reviewed literature specifically.',
+      'For peer-reviewed literature, use this with mode basic or advanced alongside consensus_search — not turbo/fast,',
+      'and not instead of consensus_search. Prefer both over built-in web_search for finding papers.',
     ].join(' '),
     parameters: {
       objective: {
@@ -71,7 +72,7 @@ export function apply(ctx) {
         type: 'string',
         enum: MODES,
         required: true,
-        description: 'Search mode: turbo (simple lookups, EN/JA only), fast (most agent loops), basic (longer excerpts), advanced (multi-hop / deep research).',
+        description: 'Required. turbo (simple EN/JA lookups), fast (non-literature), basic (longer excerpts / focused literature), advanced (multi-hop literature / deep research).',
       },
       max_chars_total: {
         type: 'number',
@@ -86,7 +87,7 @@ export function apply(ctx) {
       const key = await resolveEnv('PARALLEL_API_KEY')
       if (!key) {
         return {
-          error: 'PARALLEL_API_KEY is not set (Settings -> ResearchCraft API keys, or the matching env var). Use mcp__parallel__web_search instead — it works keyless, always in basic mode.',
+          error: 'PARALLEL_API_KEY is not set (Settings -> ResearchCraft API keys, or the matching env var). mcp__parallel__* is also disabled without this key.',
         }
       }
       const queries = (args.search_queries || []).map((q) => String(q).trim()).filter(Boolean)
