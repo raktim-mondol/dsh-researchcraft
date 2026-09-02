@@ -4,6 +4,16 @@ ResearchCraft as a **DeepSeek Harness** profile: the DSH web UI and DSH agent, w
 
 ## Install
 
+1. Install **[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)** first (`dsh`). Follow that repo's README — for example:
+
+   ```sh
+   npm install -g @deepseek-ai/dsh
+   ```
+
+   or run without a global install: `npx @deepseek-ai/dsh web`. You need a working `dsh` CLI before the next step.
+
+2. Then add this plugin:
+
 ```sh
 dsh plugin --profile researchcraft add github:raktim-mondol/dsh-researchcraft
 ```
