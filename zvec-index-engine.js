@@ -272,6 +272,24 @@ export async function checkIndexReady(root, launch, embedding) {
   return status.code === 0
 }
 
+/** Map `zg status` heading to zg's workspace-index state. */
+export function parseWorkspaceIndexState(out) {
+  const text = stripAnsi(String(out || ''))
+  if (/Workspace index is ready/i.test(text)) return 'ready'
+  if (/Workspace index is updating/i.test(text)) return 'indexing'
+  if (/needs an update/i.test(text)) return 'stale'
+  if (/index failed/i.test(text)) return 'failed'
+  if (/update was cancelled/i.test(text)) return 'cancelled'
+  if (/indexing is disabled/i.test(text)) return 'disabled'
+  if (/is not created/i.test(text)) return 'unindexed'
+  if (/is not configured/i.test(text)) return 'undecided'
+  return 'unknown'
+}
+
+function isSearchableState(state) {
+  return state === 'ready' || state === 'stale' || state === 'indexing'
+}
+
 function killIndexer(child) {
   if (!child?.pid) return
   try { child.kill('SIGINT') } catch { /* ignore */ }
@@ -454,16 +472,32 @@ export async function indexStatus(root, launch) {
   const autoIndex = isAutoIndexOn(await resolveEnv('ZVEC_GREP_AUTO_INDEX'))
   const abs = typeof root === 'string' && root.length > 0 ? resolve(root) : null
   const live = abs ? jobs.get(abs)?.snapshot() : listIndexJobs()[0]
-  const ready = Boolean(abs && launch && await checkIndexReady(abs, launch, embedding))
+  let workspaceState = 'unknown'
+  let parsed = {}
+  if (abs && launch) {
+    const result = await run(cliCommand(launch), cliArgs(launch, ['status']), {
+      cwd: abs,
+      timeoutMs: 60_000,
+      env: zgEnv(embedding),
+      silent: true,
+    })
+    workspaceState = parseWorkspaceIndexState(result.out)
+    parsed = parseProgressText(result.out)
+  }
+  const searchable = isSearchableState(workspaceState)
   return {
-    status: live?.status || (ready ? 'ready' : 'idle'),
-    ready,
+    status: live?.status || workspaceState,
+    ready: searchable,
+    fresh: workspaceState === 'ready',
+    workspace_state: workspaceState,
     auto_index: autoIndex,
     root: abs,
     embedding,
     job: live ?? null,
-    line: live?.line ?? null,
-    percent: live?.percent ?? null,
+    line: live?.line ?? parsed.line ?? null,
+    percent: live?.percent ?? parsed.percent ?? null,
+    current: live?.current ?? parsed.current ?? null,
+    total: live?.total ?? parsed.total ?? null,
   }
 }
 

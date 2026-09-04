@@ -40,9 +40,21 @@ function resolveRoot(args, exec) {
   return isAbsolute(raw) ? resolve(raw) : resolve(workspaceRoot(exec), raw)
 }
 
-/** DSH rejects execute() results that are not lossless JSON (`undefined`, NaN). */
+/** DSH rejects execute() results that are not lossless JSON (`undefined`, NaN, -0). */
 function lossless(value) {
-  return JSON.parse(JSON.stringify(value, (_key, v) => (v === undefined ? null : v)))
+  const round = JSON.parse(JSON.stringify(value, (_key, v) => (v === undefined ? null : v)))
+  return dropNulls(round)
+}
+
+function dropNulls(value) {
+  if (value === null || typeof value !== 'object') return value
+  if (Array.isArray(value)) return value.map(dropNulls)
+  const out = {}
+  for (const [key, item] of Object.entries(value)) {
+    if (item === null) continue
+    out[key] = dropNulls(item)
+  }
+  return out
 }
 
 function render(value) {
@@ -53,10 +65,13 @@ function render(value) {
   if (value.action) lines.push(`action: ${value.action}`)
   if (value.status) lines.push(`status: ${value.status}`)
   if (value.ready != null) lines.push(`ready: ${value.ready}`)
+  if (value.fresh != null) lines.push(`fresh: ${value.fresh}`)
+  if (value.workspace_state) lines.push(`workspace_state: ${value.workspace_state}`)
   if (value.auto_index != null) lines.push(`auto_index: ${value.auto_index}`)
   if (value.root) lines.push(`root: ${value.root}`)
   if (value.embedding) lines.push(`embedding: ${value.embedding}`)
   if (value.percent != null) lines.push(`percent: ${value.percent}`)
+  if (value.current != null && value.total != null) lines.push(`files: ${value.current}/${value.total}`)
   if (value.line) lines.push(value.line)
   if (value.error) lines.push(`error: ${value.error}`)
   if (value.skipped) lines.push('already indexed; skipped')
@@ -113,14 +128,21 @@ export function apply(ctx) {
 
       if (action === 'status') {
         const info = await indexStatus(root, launch)
+        const state = info.workspace_state
+        let hint = 'No index. If semantic search would help, ask_user_question before action=start unless the user already asked to index.'
+        if (info.fresh || state === 'ready') {
+          hint = 'Index is ready; call mcp__zvec_grep__zvec_grep_search.'
+        } else if (state === 'stale') {
+          hint = 'Index exists but is stale (files changed). Semantic search still works; action=start incrementally updates it. Do not --rebuild unless asked.'
+        } else if (state === 'indexing' || info.status === 'running') {
+          hint = 'Indexing is in progress. Wait, or action=start to join.'
+        } else if (info.auto_index) {
+          hint = 'Session-start indexing is on; if a job is not already running, call action=start and wait.'
+        }
         return lossless({
           action,
           ...info,
-          hint: info.ready
-            ? 'Index is ready; call mcp__zvec_grep__zvec_grep_search.'
-            : (info.auto_index
-              ? 'Session-start indexing is on; if a job is not already running, call action=start and wait.'
-              : 'No index. If semantic search would help, ask_user_question before action=start unless the user already asked to index.'),
+          hint,
         })
       }
 
