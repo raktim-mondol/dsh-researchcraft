@@ -40,6 +40,11 @@ function resolveRoot(args, exec) {
   return isAbsolute(raw) ? resolve(raw) : resolve(workspaceRoot(exec), raw)
 }
 
+/** DSH rejects execute() results that are not lossless JSON (`undefined`, NaN). */
+function lossless(value) {
+  return JSON.parse(JSON.stringify(value, (_key, v) => (v === undefined ? null : v)))
+}
+
 function render(value) {
   if (value.error && !value.status) {
     return [{ type: 'text', text: `Error: ${value.error}` }]
@@ -94,21 +99,21 @@ export function apply(ctx) {
     async execute(args, exec) {
       const action = String(args.action || '').trim()
       if (!ACTIONS.includes(action)) {
-        return { error: `action must be one of ${ACTIONS.join(', ')}.` }
+        return lossless({ error: `action must be one of ${ACTIONS.join(', ')}.` })
       }
       const root = resolveRoot(args, exec)
       if (!shouldIndexRoot(root)) {
-        return { action, status: 'failed', root, error: 'Refusing to index home directory or /.' }
+        return lossless({ action, status: 'failed', root, error: 'Refusing to index home directory or /.' })
       }
       const launch = await ensureZgInstalled()
       if (!launch) {
-        return { action, status: 'failed', root, error: 'zg CLI is not installed. Check Settings / ZVEC_GREP_CLI.' }
+        return lossless({ action, status: 'failed', root, error: 'zg CLI is not installed. Check Settings / ZVEC_GREP_CLI.' })
       }
       const embedding = (await resolveEnv('ZVEC_GREP_EMBEDDING')) || DEFAULT_EMBEDDING
 
       if (action === 'status') {
         const info = await indexStatus(root, launch)
-        return {
+        return lossless({
           action,
           ...info,
           hint: info.ready
@@ -116,12 +121,12 @@ export function apply(ctx) {
             : (info.auto_index
               ? 'Session-start indexing is on; if a job is not already running, call action=start and wait.'
               : 'No index. If semantic search would help, ask_user_question before action=start unless the user already asked to index.'),
-        }
+        })
       }
 
       if (action === 'cancel') {
         cancelIndex(root)
-        return { action, status: 'cancelling', root, line: 'Cancel requested.' }
+        return lossless({ action, status: 'cancelling', root, line: 'Cancel requested.' })
       }
 
       const result = await startIndex({
@@ -132,7 +137,7 @@ export function apply(ctx) {
         wait: true,
         skipIfReady: false,
       })
-      return { action, ...result }
+      return lossless({ action, ...result })
     },
     presentCall() {
       return { card: 'generic', title: 'Workspace index', kind: 'other' }

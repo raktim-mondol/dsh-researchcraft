@@ -452,17 +452,17 @@ export async function startIndex(opts) {
 export async function indexStatus(root, launch) {
   const embedding = (await resolveEnv('ZVEC_GREP_EMBEDDING')) || DEFAULT_EMBEDDING
   const autoIndex = isAutoIndexOn(await resolveEnv('ZVEC_GREP_AUTO_INDEX'))
-  const abs = typeof root === 'string' && root.length > 0 ? resolve(root) : undefined
+  const abs = typeof root === 'string' && root.length > 0 ? resolve(root) : null
   const live = abs ? jobs.get(abs)?.snapshot() : listIndexJobs()[0]
-  const ready = abs && launch ? await checkIndexReady(abs, launch, embedding) : false
+  const ready = Boolean(abs && launch && await checkIndexReady(abs, launch, embedding))
   return {
     status: live?.status || (ready ? 'ready' : 'idle'),
     ready,
     auto_index: autoIndex,
     root: abs,
     embedding,
-    job: live || null,
-    line: live?.line,
+    job: live ?? null,
+    line: live?.line ?? null,
     percent: live?.percent ?? null,
   }
 }
