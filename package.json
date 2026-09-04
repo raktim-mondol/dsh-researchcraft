@@ -1,6 +1,6 @@
 {
   "name": "dsh-researchcraft",
-  "version": "0.6.2",
+  "version": "0.6.4",
   "description": "ResearchCraft as a DeepSeek Harness profile: DSH web UI and agent, scientific skills, lab notebook, specialist subagents.",
   "license": "MIT",
   "type": "module",
@@ -8,6 +8,8 @@
   "exports": {
     ".": "./index.js",
     "./mcp-connectors": "./mcp-connectors.js",
+    "./zvec-grep": "./zvec-grep.js",
+    "./zvec-index": "./zvec-index.js",
     "./consensus-search": "./consensus-search.js",
     "./parallel-search": "./parallel-search.js",
     "./paper-download": "./paper-download.js",
@@ -38,6 +40,10 @@
     "credential-env.js",
     "settings-keys.js",
     "mcp-connectors.js",
+    "zvec-grep.js",
+    "zvec-grep-cli.js",
+    "zvec-index-engine.js",
+    "zvec-index.js",
     "consensus-search.js",
     "parallel-search.js",
     "paper-download.js",

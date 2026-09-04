@@ -302,6 +302,20 @@
 - id: mcp-connectors
   name: dsh-researchcraft/mcp-connectors
 
+# zvec-grep local workspace search (stdio MCP). Surfaces as
+# `mcp__zvec_grep__zvec_grep_search` when the `zg` CLI is installed; skips
+# the mount (and logs) when it is not, so a missing CLI does not take this
+# preset down. Exact lookup stays on tool-fs-search `grep`/`glob` above.
+# Indexing is opt-in (Settings default no); see zvec-index.js. No realm.
+- id: zvec-grep
+  name: dsh-researchcraft/zvec-grep
+
+# Native index/status/cancel tool (progress + Cancel in Settings and the
+# session header). Separate row so it can inject `tools`; the MCP row above
+# must not. See zvec-index.js. Indexing is opt-in (Settings default no).
+- id: zvec-index
+  name: dsh-researchcraft/zvec-index
+
 # Parallel Search REST (x-api-key auth) — per-call `mode` (turbo/fast/basic/
 # advanced). The MCP `web_search` tool cannot set mode; this is how the
 # agent picks one. See parallel-search.js. Kept in this preset alongside

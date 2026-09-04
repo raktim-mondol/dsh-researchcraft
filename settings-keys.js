@@ -2,14 +2,18 @@
  * The `dsh-researchcraft-keys` settings namespace: API keys for the MCP
  * connectors, image generation, and remote-compute tools, plus a handful of
  * non-secret preferences (IMAGE_MODEL, SUBAGENT_MODEL_COMPLEX,
- * SUBAGENT_MODEL_VISION) that ride along in the same namespace/UI section
- * for convenience — editable from Settings -> ResearchCraft API keys.
+ * SUBAGENT_MODEL_VISION, ZVEC_GREP_EMBEDDING, ZVEC_GREP_AUTO_INDEX) that ride
+ * along in the same namespace/UI section for convenience — editable from
+ * Settings -> ResearchCraft API keys.
  * Registered at plugin load; resolveEnv() (credential-env.js) reads the live
  * value on every call, so a value entered in Settings works without a
- * restart for fields read per-call (IMAGE_MODEL) — process.env still wins
- * when set. The two SUBAGENT_MODEL_* fields feed a standing subagent-tool
- * mount instead (see subagent-models.js) and need a `dsh` restart to apply,
- * same as the MCP connector keys below.
+ * restart for fields read per-call (IMAGE_MODEL, ZVEC_GREP_AUTO_INDEX) —
+ * process.env still wins when set. The two SUBAGENT_MODEL_* fields and
+ * ZVEC_GREP_EMBEDDING / ZVEC_GREP_API_KEY feed standing preset mounts (see
+ * subagent-models.js and zvec-grep.js) and need a `dsh` restart to apply,
+ * same as the MCP connector keys below. ZVEC_GREP_INDEX_STATE /
+ * ZVEC_GREP_INDEX_CANCEL are ephemeral progress/cancel wires, not user
+ * credentials — hidden from the Settings form, written by the indexer.
  *
  * `ctx.remote.credentials` (the dedicated secret-credential wire seam) does
  * not resolve from a dynamically-loaded third-party client plugin in this
@@ -43,6 +47,11 @@ export const KEY_FIELDS = [
   'MODAL_TOKEN_ID',
   'MODAL_TOKEN_SECRET',
   'RUNPOD_API_KEY',
+  'ZVEC_GREP_EMBEDDING',
+  'ZVEC_GREP_API_KEY',
+  'ZVEC_GREP_AUTO_INDEX',
+  'ZVEC_GREP_INDEX_STATE',
+  'ZVEC_GREP_INDEX_CANCEL',
 ]
 
 const shape = {}
@@ -54,6 +63,11 @@ let scope
 /** Register the namespace; call once, at plugin apply(). */
 export function registerKeysSettings(ctx) {
   scope = ctx.settings.register(KEYS_NAMESPACE, KeysSettingsSchema)
+  return scope
+}
+
+/** Owner SettingsScope for this namespace, or undefined before registration. */
+export function getKeysScope() {
   return scope
 }
 

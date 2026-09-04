@@ -1,2 +1,4 @@
 node_modules/
 package-lock.json
+.zvec-grep/
+.e2e/

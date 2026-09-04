@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { IndexProgressPanel } from './ZvecIndexProgress.jsx'
 
 const IMAGE_MODEL_OPTIONS = [
   { value: 'gemini-2.5-flash-image', label: 'gemini-2.5-flash-image — nano banana' },
@@ -10,6 +11,15 @@ const SUBAGENT_MODEL_COMPLEX_OPTIONS = [
 ]
 const SUBAGENT_MODEL_VISION_OPTIONS = [
   { value: 'deepseek-v4-flash-vision-exp', label: 'deepseek-v4-flash-vision-exp (default)' },
+]
+const ZVEC_GREP_EMBEDDING_OPTIONS = [
+  { value: 'local/potion-retrieval-32m', label: 'local/potion-retrieval-32m — papers / notes (default)' },
+  { value: 'local/potion-code-16m-v2', label: 'local/potion-code-16m-v2 — code' },
+  { value: 'local/potion-multilingual-128m', label: 'local/potion-multilingual-128m — multilingual docs' },
+]
+const ZVEC_GREP_AUTO_INDEX_OPTIONS = [
+  { value: 'no', label: 'No — ask in chat when semantic search would help (default)' },
+  { value: 'yes', label: 'Yes — index this workspace when a ResearchCraft session opens' },
 ]
 const CUSTOM_MODEL = '__custom__'
 
@@ -27,6 +37,9 @@ const KEYS = [
   { field: 'MODAL_TOKEN_ID', label: 'Modal — token ID', group: 'Remote compute', hint: 'From modal.com/settings.' },
   { field: 'MODAL_TOKEN_SECRET', label: 'Modal — token secret', group: 'Remote compute', hint: 'From modal.com/settings.' },
   { field: 'RUNPOD_API_KEY', label: 'Runpod', group: 'Remote compute', hint: 'From console.runpod.io/user/settings.' },
+  { field: 'ZVEC_GREP_AUTO_INDEX', label: 'Index at session start', group: 'Workspace search (zvec-grep)', type: 'select', options: ZVEC_GREP_AUTO_INDEX_OPTIONS, hideCustom: true, hint: 'Default is No. When No, you can still ask in chat to index, and the agent will ask first when semantic search would help. When Yes, a ResearchCraft session indexes that workspace in the background if no index exists yet. Applies to the next session — no restart. While indexing, a progress bar with estimated time and Cancel appear here and in the session header. There is no timeout.' },
+  { field: 'ZVEC_GREP_EMBEDDING', label: 'zvec-grep embedding', group: 'Workspace search (zvec-grep)', type: 'select', options: ZVEC_GREP_EMBEDDING_OPTIONS, hint: 'Default local model for new zg indexes (potion-retrieval-32m, ~130 MB download, no API key). Existing indexes keep their stored model. Restart dsh after changing.' },
+  { field: 'ZVEC_GREP_API_KEY', label: 'zvec-grep remote embedding key', group: 'Workspace search (zvec-grep)', hint: 'Leave empty. Only needed for a remote (Qwen) embedding model, not for the default local Potion models.' },
 ]
 
 const GROUPS = [...new Set(KEYS.map((k) => k.group))]
@@ -83,7 +96,7 @@ function SelectField({ k, scope, snapshot, writable }) {
         {k.options.map((o) => (
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
-        <option value={CUSTOM_MODEL}>Custom…</option>
+        {!k.hideCustom && <option value={CUSTOM_MODEL}>Custom…</option>}
       </select>
       {customMode && (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -201,7 +214,7 @@ export function ApiKeysSection(props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '4px 0' }}>
       <p style={{ margin: 0, opacity: 0.75, fontSize: '0.9em' }}>
-        API keys for ResearchCraft's academic-search connectors, image generation, and remote-compute tools.
+        API keys for ResearchCraft's academic-search connectors, image generation, remote-compute tools, and optional zvec-grep remote embeddings.
         A key set here is used only when the matching environment variable isn't already set when DSH starts.
       </p>
       {!writable && (
@@ -215,6 +228,9 @@ export function ApiKeysSection(props) {
               ? <SelectField key={k.field} k={k} scope={scope} snapshot={snapshot} writable={writable} />
               : <SecretField key={k.field} k={k} scope={scope} snapshot={snapshot} writable={writable} />
           ))}
+          {group === 'Workspace search (zvec-grep)' && (
+            <IndexProgressPanel scope={scope} />
+          )}
         </div>
       ))}
     </div>

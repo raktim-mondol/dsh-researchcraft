@@ -1,20 +1,12 @@
 /**
- * dsh-researchcraft client plugin: adds a Settings page for the API keys
- * ResearchCraft's server-side tools and MCP connectors read (the launching
- * shell's environment always takes priority over a key set here). Registers
- * one `settings.section` entry; nothing else in the web UI is touched.
- *
- * Uses `ctx.settingsScope` (an injected Service, like `ctx.slots`), not
- * `ctx.remote.credentials`: dotted `ctx.remote.<namespace>` access resolves
- * to a separate, permanently-empty instance from a dynamically-loaded
- * third-party client plugin in this harness version (verified by direct
- * testing) — the dedicated secret-credential wire seam is unusable from here.
+ * dsh-researchcraft client plugin: Settings page for ResearchCraft API keys
+ * plus zvec-grep index progress (header chip + tool card). Uses
+ * `ctx.settingsScope` (not `ctx.remote.credentials`) — the dedicated
+ * secret-credential wire seam does not resolve from this third-party client
+ * plugin in this harness version.
  */
-// Type-only in the TS original; kept as a plain comment here since this
-// package has no client type-check step — ctx.settingsScope and ctx.slots
-// come from @deepseek-ai/dsh-client-ui-settings and
-// @deepseek-ai/dsh-client-ui-slots, already mounted by dsh-web-app.
 import { ApiKeysSection } from './ApiKeysSection.jsx'
+import { ZvecIndexHeaderAction, ZvecIndexToolView } from './ZvecIndexProgress.jsx'
 
 const NAMESPACE = 'dsh-researchcraft-keys'
 
@@ -30,4 +22,17 @@ export function apply(ctx) {
     label: () => 'ResearchCraft API keys',
     inject: () => ({ scope }),
   }, ApiKeysSection))
+
+  ctx.slots.inject('conversation.session.header.actions', () => ctx.slots.register({
+    name: 'conversation.session.header.actions',
+    id: 'zvec-index-progress',
+    order: 25,
+    inject: () => ({ scope }),
+  }, ZvecIndexHeaderAction))
+
+  ctx.slots.inject('tool.call.toolview', () => ctx.slots.register({
+    name: 'tool.call.toolview',
+    key: 'zvec_index',
+    inject: () => ({ scope }),
+  }, ZvecIndexToolView))
 }
