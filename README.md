@@ -38,9 +38,22 @@ The profile must also list `@deepseek-ai/dsh-web-app` before this bundle.
 
 ```sh
 dsh --profile researchcraft
+# or, if you use the shared launcher:
+dsh-researchcraft
 ```
 
 Opens the Harness web UI (typically `http://127.0.0.1:3080`).
+
+**One DSH surface at a time.** `dsh-web`, `dsh-tui`, `dsh-martty`, and `dsh-researchcraft` share `$DSH_HOME` (including port `3080` and the zvec-grep daemon). Ctrl+C does not always wait for those to exit, so starting another launcher while one is still in the background will fail or pick up the wrong process. The shared launcher (`scripts/dsh-launch`, installed as those four commands) stops leftover DSH processes and `zg server off` before exec. If you invoke `dsh --profile …` directly, stop the previous one first:
+
+```sh
+# leftover web UI
+ss -ltnp | grep 3080
+# leftover zg daemon
+zg server off
+```
+
+Switching to `dsh-tui` / `dsh-web` also clears a *global* agent-presets default of `researchcraft` if one was saved. That default lives in `~/.dsh/settings.yaml` and is shared across profiles — dsh-tui does not ship `dsh-researchcraft/*` plugins, so booting with that default crashes the agent. The ResearchCraft profile still defaults to the ResearchCraft preset from its own patch.
 
 **Select the ResearchCraft agent preset for each chat.** Installing this plugin adds a *ResearchCraft* option to the agent-preset picker — it does not replace whatever your default preset already is (commonly "Standard mode" / "PTC mode"). A new chat starts on that default, not on ResearchCraft, until you pick it explicitly:
 

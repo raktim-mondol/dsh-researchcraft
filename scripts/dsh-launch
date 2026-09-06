@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# Shared launcher for dsh-web, dsh-tui, dsh-martty, and dsh-researchcraft.
+#
+# Only one DSH surface should be running: a leftover web server on :3080 or a
+# leftover zvec-grep daemon will collide when you switch launchers (Ctrl+C does
+# not always wait for them). This script stops those leftovers first.
+set -euo pipefail
+
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  set +u
+  # shellcheck disable=SC1091
+  . "$NVM_DIR/nvm.sh"
+  set -u
+fi
+
+cmd="$(basename "$0")"
+DSH_HOME="${DSH_HOME:-$HOME/.dsh}"
+WEB_PORT="${DSH_WEB_PORT:-3080}"
+
+if ! command -v dsh >/dev/null 2>&1; then
+  echo "dsh not found. Install with: npm install -g @deepseek-ai/dsh@latest" >&2
+  exit 127
+fi
+
+log() { echo "dsh-launch: $*" >&2; }
+
+# PIDs listening on a TCP port (loopback or otherwise).
+pids_on_port() {
+  local port="$1"
+  ss -ltnpH 2>/dev/null | awk -v p=":${port}" '
+    index($4, p) || index($5, p) {
+      while (match($0, /pid=[0-9]+/)) {
+        print substr($0, RSTART+4, RLENGTH-4)
+        $0 = substr($0, RSTART+RLENGTH)
+      }
+    }
+  ' | sort -u
+}
+
+# Running `node …/dsh --profile …` processes (not this launcher, not an
+# unrelated shell whose command line merely *mentions* dsh).
+dsh_profile_pids() {
+  pgrep -f '[n]ode .*/bin/dsh --profile ' 2>/dev/null || true
+  pgrep -f '[n]ode .*/@deepseek-ai/dsh/lib/bin\.js' 2>/dev/null || true
+}
+
+stop_pids() {
+  local pids="$1"
+  local pid
+  [ -z "${pids//[$' \n']/}" ] && return 0
+  for pid in $pids; do
+    [ "$pid" = "$$" ] && continue
+    [ "$pid" = "$PPID" ] && continue
+    kill -0 "$pid" 2>/dev/null || continue
+    log "stopping leftover process pid $pid"
+    kill -TERM "$pid" 2>/dev/null || true
+  done
+  local i=0
+  for pid in $pids; do
+    while kill -0 "$pid" 2>/dev/null; do
+      i=$((i + 1))
+      if [ "$i" -ge 20 ]; then
+        log "pid $pid still running; sending SIGKILL"
+        kill -KILL "$pid" 2>/dev/null || true
+        break
+      fi
+      sleep 0.15
+    done
+  done
+}
+
+stop_leftover_dsh() {
+  local pids
+  pids="$( { dsh_profile_pids; pids_on_port "$WEB_PORT"; } | sort -u )"
+  if [ -n "${pids//[$' \n']/}" ]; then
+    log "stopping leftover DSH (port ${WEB_PORT} / other profiles) so $cmd can bind cleanly"
+    stop_pids "$pids"
+  fi
+}
+
+stop_zg_daemon() {
+  local zg=""
+  if [ -x "$DSH_HOME/zvec-grep/node_modules/.bin/zg" ]; then
+    zg="$DSH_HOME/zvec-grep/node_modules/.bin/zg"
+  elif command -v zg >/dev/null 2>&1; then
+    zg="$(command -v zg)"
+  fi
+  [ -z "$zg" ] && return 0
+  if "$zg" server status --check-ready >/dev/null 2>&1; then
+    log "stopping leftover zvec-grep daemon"
+    "$zg" server off >/dev/null 2>&1 || true
+  fi
+}
+
+# ResearchCraft's agent preset is seeded into $DSH_HOME and the picker may
+# persist it as the *global* default. dsh-tui / dsh-web then try to mount
+# dsh-researchcraft/* plugins that are not installed in those profiles.
+clear_researchcraft_global_default() {
+  local settings="$DSH_HOME/settings.yaml"
+  [ -f "$settings" ] || return 1
+  command -v python3 >/dev/null 2>&1 || return 1
+  python3 - "$settings" <<'PY'
+import pathlib, re, sys
+path = pathlib.Path(sys.argv[1])
+text = path.read_text()
+new, n = re.subn(
+    r"(?m)^agent-presets:\n  default: researchcraft\n",
+    "",
+    text,
+    count=1,
+)
+if n:
+    path.write_text(new)
+    sys.exit(0)
+sys.exit(1)
+PY
+}
+
+stop_leftover_dsh
+stop_zg_daemon
+
+if [ "$cmd" = "dsh-researchcraft" ]; then
+  if [ -z "${RESEARCHCRAFT_SKILLS_DIR:-}" ]; then
+    if [ -d "$HOME/scientific-agent-skills/skills" ]; then
+      export RESEARCHCRAFT_SKILLS_DIR="$HOME/scientific-agent-skills/skills"
+    elif [ -d "$HOME/researchcraft/projects/default/sandbox/.pi/skills" ]; then
+      export RESEARCHCRAFT_SKILLS_DIR="$HOME/researchcraft/projects/default/sandbox/.pi/skills"
+    fi
+  fi
+  exec dsh --profile researchcraft "$@"
+fi
+
+case "$cmd" in
+  dsh-web|dsh-tui|dsh-martty)
+    if clear_researchcraft_global_default; then
+      log "cleared global agent-presets default \"researchcraft\" so $cmd can boot without that plugin"
+    fi
+    ;;
+esac
+
+case "$cmd" in
+  dsh-web) exec dsh --profile web "$@" ;;
+  dsh-tui) exec dsh --profile dsh-tui "$@" ;;
+  dsh-martty) exec dsh --profile martty "$@" ;;
+  *)
+    echo "unknown dsh launcher: $cmd" >&2
+    echo "use: dsh-web | dsh-tui | dsh-martty | dsh-researchcraft" >&2
+    exit 1
+    ;;
+esac
