@@ -86,7 +86,7 @@ Every credential below (`PARALLEL_API_KEY`, `FIRECRAWL_API_KEY`, `CONSENSUS_API_
 - **Settings → ResearchCraft API keys** in the DSH web UI — type a key, Save. Persisted in the profile's `settings.yaml`; a blank field always means "keep the current value", Clear removes it.
 - **Shell environment variable** — takes priority over Settings when both are set.
 
-The same Settings page also has an **Image model** dropdown for `IMAGE_MODEL` — not a credential, so it isn't password-masked and applies immediately on selection rather than needing Save (see [Image generation](#image-generation)). It also has two more model-id dropdowns, **Complex-task model** (`SUBAGENT_MODEL_COMPLEX`) and **Image-reading model** (`SUBAGENT_MODEL_VISION`) — not credentials either, but these two behave like the MCP connectors below, not like Image model: they need a restart to apply (see [Subagent model routing](#subagent-model-routing)). **zvec-grep embedding** (`ZVEC_GREP_EMBEDDING`) is the same restart-needed dropdown: it is passed into the zg MCP child at mount time. **Index at session start** (`ZVEC_GREP_AUTO_INDEX`, default No) is live for the next ResearchCraft session — no restart (see [Workspace search](#workspace-search)).
+The same Settings page also has an **Image model** dropdown for `IMAGE_MODEL` — not a credential, so it isn't password-masked and applies immediately on selection rather than needing Save (see [Image generation](#image-generation)). It also has two more model-id dropdowns, **Complex-task model** (`SUBAGENT_MODEL_COMPLEX`) and **Image-reading model** (`SUBAGENT_MODEL_VISION`) — not credentials either, but these two behave like the MCP connectors below, not like Image model: they need a restart to apply (see [Subagent model routing](#subagent-model-routing)). **zvec-grep embedding** (`ZVEC_GREP_EMBEDDING`) is the same restart-needed dropdown: it is passed into `zg server on` at mount time. **Index at session start** (`ZVEC_GREP_AUTO_INDEX`, default No) is live for the next ResearchCraft session — no restart (see [Workspace search](#workspace-search)).
 
 Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`, `consensus_search`, `parallel_search`, `paper_download`) pick up a Settings change on the very next call, no restart needed.
 
@@ -98,7 +98,9 @@ The MCP connectors (Parallel, Firecrawl, Scite, zvec-grep) and the two subagent-
 
 [zvec-grep](https://github.com/zvec-ai/zvec-grep) (`zg`) is the local-first hybrid search layer on the ResearchCraft preset: BM25 + vectors over an on-disk index, exposed as `mcp__zvec_grep__zvec_grep_search`. Exact words, quotes, identifiers, filenames, regexes, and exhaustive hit lists stay on the preset's native `grep` / `glob` (`@deepseek-ai/dsh-tool-fs-search`). Open-web and literature search stay on Parallel / Consensus / Firecrawl / Scite — zg is workspace-only.
 
-You do **not** install `zg` yourself. The first time the ResearchCraft preset mounts after `dsh plugin add`, the plugin runs `npm install --prefix ~/.dsh/zvec-grep @zvec/zvec-grep` and then starts `zg server --stdio` in the same process — no second restart. That first start can take several minutes (npm + later the ~130 MB Potion model). Later starts reuse `~/.dsh/zvec-grep`. Override with `ZVEC_GREP_CLI` if you already have `zg` on PATH. If install fails, the rest of the preset still loads and the search tool is absent (a warning is logged).
+You do **not** install `zg` yourself. The first time the ResearchCraft preset mounts after `dsh plugin add`, the plugin runs `npm install --prefix ~/.dsh/zvec-grep @zvec/zvec-grep`, starts `zg server on` (the loopback daemon), and mounts search over Streamable HTTP at `http://127.0.0.1:7999/mcp` — no second restart. That first start can take several minutes (npm + later the ~130 MB Potion model). Later starts reuse `~/.dsh/zvec-grep` and start the daemon again. Stopping `dsh` runs `zg server off`, so the daemon does not stay up in the background. Override with `ZVEC_GREP_CLI` if you already have `zg` on PATH. If install or the daemon fails, the rest of the preset still loads and the search tool is absent (a warning is logged).
+
+The plugin talks to the daemon over HTTP rather than `zg server --stdio`. zg 0.2.1's stdio bridge can exit with `zvec-grep daemon stopped while the stdio bridge was connected` while the daemon is still healthy ([zvec-grep#106](https://github.com/zvec-ai/zvec-grep/issues/106)); DSH would then reconnect the child and print that error repeatedly.
 
 Indexing is **opt-in**. Settings → ResearchCraft API keys → **Index at session start** defaults to **No**. When No (the default), a new chat does not index; you can still type “index this workspace” in the chat, and whenever semantic search would help the agent asks first (and only indexes if you say yes). When Yes, opening a ResearchCraft session indexes **that workspace** in the background if no index exists yet (`zg index --embedding local/potion-retrieval-32m`, local, no API key).
 
@@ -116,11 +118,11 @@ Every MCP call needs an **absolute** `root` (the session working directory). Rel
 | Setting / env | What it does |
 |---|---|
 | `ZVEC_GREP_AUTO_INDEX` | `yes` / `no`. Index this workspace when a ResearchCraft session opens. Default `no`. Live for the next session (no restart). |
-| `ZVEC_GREP_EMBEDDING` | Default model id for *new* indexes. Unset means `local/potion-retrieval-32m`. Existing indexes keep their stored model. Needs a `dsh` restart to reach the MCP child. |
+| `ZVEC_GREP_EMBEDDING` | Default model id for *new* indexes. Unset means `local/potion-retrieval-32m`. Existing indexes keep their stored model. Restart `dsh` after changing — the next start brings up a fresh daemon with the new value. |
 | `ZVEC_GREP_API_KEY` | **Not used** with the default local Potion models. Only if you opt into a remote (Qwen) embedding provider. |
 | `ZVEC_GREP_CLI` | Absolute path to `zg` or to `@zvec/zvec-grep`'s `dist/cli/index.js`. Env only. |
 
-The stdio child may leave zg's loopback daemon running under `~/.zvec-grep/daemon/` after `dsh` stops — zg's design, not a leak. `zg server off` if you want it gone.
+The loopback daemon under `~/.zvec-grep/daemon/` is started with the ResearchCraft preset and stopped when `dsh` exits. You do not need `zg server off` by hand.
 
 Install, index, and routing details for the agent are in the bundled `zvec-grep` skill (`skills/zvec-grep`).
 

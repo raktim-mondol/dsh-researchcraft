@@ -3,11 +3,19 @@
  *
  * First ResearchCraft start (after `dsh plugin add`) installs the zg CLI into
  * `$DSH_HOME/zvec-grep` if it is not already on PATH / ZVEC_GREP_CLI, then
- * mounts `mcp__zvec_grep__zvec_grep_search` in the same process — no second
- * restart. Indexing is opt-in: Settings "Index at session start" defaults to
- * no. The user can index later from chat (`zvec_index`) or by answering yes
- * when the agent asks. Progress and Cancel live in Settings and the session
- * header. Exact words/regex/filenames stay on native `grep` / `glob`.
+ * starts `zg server on` and mounts `mcp__zvec_grep__zvec_grep_search` over
+ * the daemon's loopback Streamable HTTP MCP — no second restart. Stopping
+ * DSH (this fiber unloading) runs `zg server off` so the daemon does not
+ * outlive the process. Indexing is opt-in: Settings "Index at session
+ * start" defaults to no. The user can index later from chat (`zvec_index`)
+ * or by answering yes when the agent asks. Progress and Cancel live in
+ * Settings and the session header. Exact words/regex/filenames stay on
+ * native `grep` / `glob`.
+ *
+ * HTTP rather than `zg server --stdio`: zg 0.2.1's stdio bridge treats a
+ * truncated instance.lock heartbeat as "daemon died" and exits
+ * (https://github.com/zvec-ai/zvec-grep/issues/106). DSH then reconnects
+ * the child, so the error repeats on the host stderr.
  */
 import { isAbsolute } from 'node:path'
 import * as McpClient from '@deepseek-ai/dsh-mcp-client'
@@ -15,10 +23,12 @@ import { resolveEnv } from './credential-env.js'
 import {
   bundledInstallDir,
   DEFAULT_EMBEDDING,
+  ensureDaemonReady,
   ensureZgInstalled,
   isAutoIndexOn,
   LOG,
   shouldIndexRoot,
+  stopDaemon,
 } from './zvec-grep-cli.js'
 import {
   ensureCancelWatch,
@@ -49,22 +59,19 @@ function sessionCwd(session) {
   return typeof cwd === 'string' && cwd.length > 0 ? cwd : undefined
 }
 
-function mountSearch(ctx, launch, embedding, apiKey) {
-  const env = {
-    ZVEC_GREP_MCP_TOOLSET: 'agent',
-    ZVEC_GREP_EMBEDDING: embedding,
+function mountSearch(ctx, launch, embedding, daemon) {
+  if (daemon?.serverUrl) {
+    const headers = {}
+    if (daemon.token) headers.Authorization = `Bearer ${daemon.token}`
+    ctx.plugin(McpClient, {
+      serverName: 'zvec_grep',
+      transport: 'streamable-http',
+      url: daemon.serverUrl,
+      headers,
+      failOnStartupError: false,
+      toolCallTimeoutMs: TOOL_CALL_TIMEOUT_MS,
+    })
   }
-  if (apiKey) env.ZVEC_GREP_API_KEY = apiKey
-
-  ctx.plugin(McpClient, {
-    serverName: 'zvec_grep',
-    transport: 'stdio',
-    command: launch.command,
-    args: launch.args,
-    env,
-    failOnStartupError: false,
-    toolCallTimeoutMs: TOOL_CALL_TIMEOUT_MS,
-  })
 
   ctx.on('session/created', (session) => {
     if (session?.header?.origin === 'subagent') return
@@ -118,5 +125,13 @@ export async function apply(ctx) {
     resolveEnv('ZVEC_GREP_EMBEDDING'),
     resolveEnv('ZVEC_GREP_API_KEY'),
   ])
-  mountSearch(ctx, launch, embedding || DEFAULT_EMBEDDING, apiKey)
+  const resolvedEmbedding = embedding || DEFAULT_EMBEDDING
+  const daemon = await ensureDaemonReady(launch, { embedding: resolvedEmbedding, apiKey })
+  if (!daemon) {
+    console.warn(`${LOG}: daemon not ready; mcp__zvec_grep__* tools will be absent`)
+  }
+  // Register before the MCP child so unload closes HTTP first, then
+  // `zg server off`. Cordis runs disposers in reverse registration order.
+  ctx.effect(() => () => stopDaemon(launch), 'zvec-grep.daemon')
+  mountSearch(ctx, launch, resolvedEmbedding, daemon)
 }

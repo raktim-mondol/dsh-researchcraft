@@ -87,7 +87,6 @@ zg status --check-ready
 zg query "where theme preferences are restored"   # human/CLI; agents prefer the MCP tool
 zg query --rg -F "loadTheme" src                  # exhaustive rg; agents prefer native grep
 zg server status --check-ready
-zg server off                                     # only if the user wants the daemon gone
 ```
 
-The stdio MCP child may leave a loopback daemon under `~/.zvec-grep/daemon/` after `dsh` stops. Harmless; `zg server off` if asked.
+The plugin starts `zg server on` when the ResearchCraft preset mounts and talks to the loopback daemon over HTTP (`http://127.0.0.1:7999/mcp`), not `zg server --stdio`. Stopping `dsh` runs `zg server off`. Do not leave a long-lived daemon running for this plugin, and do not `zg server off` while DSH is still up unless the user asked.

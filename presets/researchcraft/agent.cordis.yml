@@ -302,11 +302,14 @@
 - id: mcp-connectors
   name: dsh-researchcraft/mcp-connectors
 
-# zvec-grep local workspace search (stdio MCP). Surfaces as
-# `mcp__zvec_grep__zvec_grep_search` when the `zg` CLI is installed; skips
-# the mount (and logs) when it is not, so a missing CLI does not take this
-# preset down. Exact lookup stays on tool-fs-search `grep`/`glob` above.
-# Indexing is opt-in (Settings default no); see zvec-index.js. No realm.
+# zvec-grep local workspace search (loopback Streamable HTTP MCP via
+# `zg server on` while this fiber is loaded, `zg server off` on unload).
+# Surfaces as `mcp__zvec_grep__zvec_grep_search` when the `zg` CLI is
+# installed and the daemon is ready; skips the mount (and logs) when it
+# is not, so a missing CLI/daemon does not take this preset down. Exact
+# lookup stays on tool-fs-search `grep`/`glob` above. Indexing is opt-in
+# (Settings default no); see zvec-index.js. No realm. HTTP rather than
+# `zg server --stdio` — see zvec-grep.js.
 - id: zvec-grep
   name: dsh-researchcraft/zvec-grep
 
