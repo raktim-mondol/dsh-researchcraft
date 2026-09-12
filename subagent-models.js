@@ -10,13 +10,15 @@
  * - `subagent_pro` — an escalation path for delegated work that needs
  *   noticeably more reasoning than routine review/research (deep multi-step
  *   analysis, hard proofs, large refactors), pinned to SUBAGENT_MODEL_COMPLEX
- *   (default "deepseek-v4-pro").
+ *   (default "deepseek-flash").
  * - `subagent_vision` — for delegating image-reading/visual-inspection work
  *   (figures, scans, screenshots) to a child whose route actually declares
- *   image input, pinned to SUBAGENT_MODEL_VISION (default
- *   "deepseek-v4-flash-vision-exp"). The child still does the reading itself
- *   with the shared `read_image` tool (@deepseek-ai/dsh-tool-fs) once routed
- *   to a vision-capable model — this tool only supplies the routing.
+ *   image input, pinned to SUBAGENT_MODEL_VISION (default "deepseek-flash").
+ *   The child still does the reading itself with the shared `read_image`
+ *   tool (@deepseek-ai/dsh-tool-fs) once routed to a vision-capable model —
+ *   this tool only supplies the routing. Legacy ids deepseek-v4-flash and
+ *   deepseek-v4-flash-vision-exp are still accepted by the API but those
+ *   models are retired; requests are served by DeepSeek-V4.1-Flash.
  *
  * The plain default `subagent` tool (agent.cordis.yml) is deliberately left
  * alone with no `agentOptions` override: it inherits whichever model the
@@ -63,8 +65,8 @@ import { getStoredKey } from './settings-keys.js'
 export const name = 'dsh-researchcraft-subagent-models'
 export const inject = ['tools', 'subagents', 'systemPrompt']
 
-const DEFAULT_COMPLEX_MODEL = 'deepseek-v4-pro'
-const DEFAULT_VISION_MODEL = 'deepseek-v4-flash-vision-exp'
+const DEFAULT_COMPLEX_MODEL = 'deepseek-flash'
+const DEFAULT_VISION_MODEL = 'deepseek-flash'
 
 function resolveEnvSync(name) {
   return process.env[name]?.trim() || getStoredKey(name)

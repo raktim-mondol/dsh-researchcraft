@@ -7,10 +7,10 @@ const IMAGE_MODEL_OPTIONS = [
   { value: 'gemini-3-pro-image', label: 'gemini-3-pro-image — nano banana pro' },
 ]
 const SUBAGENT_MODEL_COMPLEX_OPTIONS = [
-  { value: 'deepseek-v4-pro', label: 'deepseek-v4-pro (default)' },
+  { value: 'deepseek-flash', label: 'deepseek-flash (default)' },
 ]
 const SUBAGENT_MODEL_VISION_OPTIONS = [
-  { value: 'deepseek-v4-flash-vision-exp', label: 'deepseek-v4-flash-vision-exp (default)' },
+  { value: 'deepseek-flash', label: 'deepseek-flash (default)' },
 ]
 const ZVEC_GREP_EMBEDDING_OPTIONS = [
   { value: 'local/potion-retrieval-32m', label: 'local/potion-retrieval-32m — papers / notes (default)' },
