@@ -5,13 +5,12 @@
  * do not put inject: ['tools'] on the MCP row.
  *
  * Search is mounted over the daemon's loopback Streamable HTTP MCP
- * (`zg server on` while DSH is up, `zg server off` on unload), not
- * `zg server --stdio`. zg 0.2.1's stdio bridge exits spuriously when a
- * 2s status poll races a non-atomic instance.lock heartbeat
- * (https://github.com/zvec-ai/zvec-grep/issues/106).
+ * (`zg server on` while DSH is up, `zg server off` on unload). Bundled zg
+ * is `@zvec/zvec-grep@^0.2.2` (Linux watchers, atomic daemon lease, stdio
+ * heartbeat race fixed). HTTP is still the DSH mount — not `zg server --stdio`.
  */
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, statSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { delimiter, dirname, isAbsolute, join, resolve } from 'node:path'
@@ -23,6 +22,9 @@ const SERVER_OFF_TIMEOUT_MS = 4_000
 const SERVER_STATUS_TIMEOUT_MS = 15 * 1000
 /** Local retrieval model; no API key. ~130 MB on first download. */
 export const DEFAULT_EMBEDDING = 'local/potion-retrieval-32m'
+/** Minimum bundled CLI. npm 0.2.2+ matches current zvec-ai/zvec-grep. */
+export const MIN_ZG_VERSION = '0.2.2'
+export const ZG_PACKAGE_SPEC = `@zvec/zvec-grep@^${MIN_ZG_VERSION}`
 const BIN_NAMES = process.platform === 'win32' ? ['zg.cmd', 'zg.exe', 'zg'] : ['zg']
 const NPM_BIN = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 export const LOG = '[dsh-researchcraft] zvec-grep'
@@ -81,14 +83,51 @@ function findGlobalNpm() {
   return undefined
 }
 
+function bundledPkgPath() {
+  return join(bundledInstallDir(), 'node_modules', '@zvec', 'zvec-grep', 'package.json')
+}
+
+export function bundledZgVersion() {
+  try {
+    const pkg = JSON.parse(readFileSync(bundledPkgPath(), 'utf8'))
+    return typeof pkg.version === 'string' ? pkg.version : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function parseSemver(v) {
+  const m = String(v || '').trim().match(/^(\d+)\.(\d+)\.(\d+)/)
+  if (!m) return null
+  return [Number(m[1]), Number(m[2]), Number(m[3])]
+}
+
+export function versionAtLeast(have, want) {
+  const a = parseSemver(have)
+  const b = parseSemver(want)
+  if (!a || !b) return false
+  for (let i = 0; i < 3; i++) {
+    if (a[i] > b[i]) return true
+    if (a[i] < b[i]) return false
+  }
+  return true
+}
+
+function findBundled() {
+  const js = bundledCliJs()
+  if (existsSync(js)) return launchFromCommand(js)
+  return undefined
+}
+
 /**
  * Resolve how DSH should spawn the zg CLI (index / `server on` / status).
- * Order: ZVEC_GREP_CLI, PATH, then a previous plugin install under $DSH_HOME/zvec-grep.
+ * Order: ZVEC_GREP_CLI, the plugin-managed install under $DSH_HOME/zvec-grep,
+ * then PATH / other npm prefixes.
  */
 export function resolveZgLaunch() {
   const override = process.env.ZVEC_GREP_CLI?.trim()
   if (override) return launchFromCommand(override)
-  return findOnPath() || findGlobalNpm()
+  return findBundled() || findOnPath() || findGlobalNpm()
 }
 
 export function run(command, args, { cwd, timeoutMs, env, signal, onData, silent } = {}) {
@@ -145,19 +184,25 @@ function npmCommand() {
 }
 
 export async function ensureZgInstalled() {
-  const existing = resolveZgLaunch()
-  if (existing) return existing
-  if (process.env.ZVEC_GREP_SKIP_INSTALL === '1') return undefined
+  if (process.env.ZVEC_GREP_SKIP_INSTALL === '1') return resolveZgLaunch()
+  // A user-supplied binary is theirs to upgrade. Only manage the bundled copy.
+  if (process.env.ZVEC_GREP_CLI?.trim()) return resolveZgLaunch()
+
+  const have = bundledZgVersion()
+  if (have && versionAtLeast(have, MIN_ZG_VERSION)) return resolveZgLaunch()
 
   const dir = bundledInstallDir()
   mkdirSync(dir, { recursive: true })
-  console.warn(`${LOG}: installing @zvec/zvec-grep into ${dir} (first run; may take several minutes)`)
+  const reason = have
+    ? `upgrading bundled zg ${have} → ${ZG_PACKAGE_SPEC}`
+    : `installing ${ZG_PACKAGE_SPEC} (first run; may take several minutes)`
+  console.warn(`${LOG}: ${reason}`)
   const result = await run(npmCommand(), [
     'install',
     '--prefix', dir,
     '--no-fund',
     '--no-audit',
-    '@zvec/zvec-grep',
+    ZG_PACKAGE_SPEC,
   ], {
     cwd: dir,
     timeoutMs: INSTALL_TIMEOUT_MS,
@@ -168,7 +213,7 @@ export async function ensureZgInstalled() {
     console.warn(`${LOG}: install failed (exit ${result.code}); mcp__zvec_grep__* tools will be absent`)
     return undefined
   }
-  console.warn(`${LOG}: CLI ready`)
+  console.warn(`${LOG}: CLI ready (${bundledZgVersion() || 'unknown'})`)
   return launch
 }
 

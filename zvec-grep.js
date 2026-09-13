@@ -12,10 +12,9 @@
  * Settings and the session header. Exact words/regex/filenames stay on
  * native `grep` / `glob`.
  *
- * HTTP rather than `zg server --stdio`: zg 0.2.1's stdio bridge treats a
- * truncated instance.lock heartbeat as "daemon died" and exits
- * (https://github.com/zvec-ai/zvec-grep/issues/106). DSH then reconnects
- * the child, so the error repeats on the host stderr.
+ * HTTP rather than `zg server --stdio`: DSH's MCP client is Streamable HTTP.
+ * Bundled zg is `@zvec/zvec-grep@^0.2.2` (upgraded on ResearchCraft start
+ * if the copy under $DSH_HOME/zvec-grep is older).
  */
 import { isAbsolute } from 'node:path'
 import * as McpClient from '@deepseek-ai/dsh-mcp-client'

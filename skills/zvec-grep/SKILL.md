@@ -16,7 +16,7 @@ The plugin already installs `zg` into `~/.dsh/zvec-grep` on the first ResearchCr
 Only if the tool is absent (install failed or `ZVEC_GREP_SKIP_INSTALL=1`):
 
 ```bash
-npm install --prefix "${DSH_HOME:-$HOME/.dsh}/zvec-grep" --no-fund --no-audit @zvec/zvec-grep
+npm install --prefix "${DSH_HOME:-$HOME/.dsh}/zvec-grep" --no-fund --no-audit @zvec/zvec-grep@^0.2.2
 ```
 
 then tell the user to restart `dsh`. Override with `ZVEC_GREP_CLI` if they already have a `zg` binary. Do not keep a long-lived `npx @zvec/zvec-grep` as the MCP server.
@@ -43,6 +43,8 @@ If semantic search would improve the answer and `status` says `ready` is false:
 
 Do not start indexing silently when auto-index is off. After start succeeds, call `mcp__zvec_grep__zvec_grep_search`, not `zg query`.
 
+If `status` says `workspace_state: stale` (or `fresh: false`) and the answer must include **recently added files**, `action=start` (incremental, waits) before searching — or pass `freshness: "wait_for_fresh"` on the search. Do not treat a ranked hit list as proof a new file is absent.
+
 ## Search
 
 Every MCP call needs an **absolute** `root` equal to the session working directory. Relative `root` fails. Do not point `root` outside the workspace unless the user named another tree.
@@ -55,7 +57,9 @@ Every MCP call needs an **absolute** `root` equal to the session working directo
 }
 ```
 
-Optional: `fts` (lexical constraints), `vector` (semantic-only), `fuse`, `globs`, `limit` (max 50). When the user asks whether conceptually related local material exists and you have no exact anchor, make **at most one** focused probe and stop if the hits are irrelevant.
+Optional: `fts` (lexical constraints), `vector` (semantic-only), `fuse`, `globs`, `limit` (max 50), `freshness` (`eventual` | `wait_for_fresh`), `autoUpdate`. When `status` is stale and coverage of new files matters, set `"freshness": "wait_for_fresh"`. If a response is `freshness: possibly_stale` with `background_refresh: running`, retry with `wait_for_fresh` (or `zvec_index start`) before concluding a path is missing.
+
+When the user asks whether conceptually related local material exists and you have no exact anchor, make **at most one** focused probe and stop if the hits are irrelevant.
 
 Exact follow-up (a symbol, a quoted string, a path) goes back to native `grep`.
 

@@ -133,7 +133,7 @@ export function apply(ctx) {
         if (info.fresh || state === 'ready') {
           hint = 'Index is ready; call mcp__zvec_grep__zvec_grep_search.'
         } else if (state === 'stale') {
-          hint = 'Index exists but is stale (files changed). Semantic search still works; action=start incrementally updates it. Do not --rebuild unless asked.'
+          hint = 'Index exists but is stale (files changed). Hits may omit new files. action=start incrementally updates it, or pass freshness="wait_for_fresh" on mcp__zvec_grep__zvec_grep_search. Do not --rebuild unless asked.'
         } else if (state === 'indexing' || info.status === 'running') {
           hint = 'Indexing is in progress. Wait, or action=start to join.'
         } else if (info.auto_index) {
