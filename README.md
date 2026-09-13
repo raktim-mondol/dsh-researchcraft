@@ -68,7 +68,7 @@ The preset picker remembers your last choice per browser, so you'll typically on
 ## What it adds
 
 - **ResearchCraft agent preset** — persona, research system prompt (notebook discipline, specialist roster, connector guidance), standard coding tools, and the academic search connectors below. Select it explicitly per chat — see [Run](#run).
-- Scientific skills catalogue vendored into `skills/` from six open-source K-Dense-AI projects, bundled with the plugin like the specialist briefs below — no separate checkout or setup needed (see [NOTICE](NOTICE) for exactly what was changed vs. each source):
+- Scientific skills catalogue vendored into `skills/` from open-source catalogues, bundled with the plugin like the specialist briefs below — no separate checkout or setup needed (see [NOTICE](NOTICE) for exactly what was changed vs. each source):
   - 140 domain skills (chemistry, genomics/bioinformatics, imaging, stats, ML, writing, …) — [`scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills)
   - 16 research-discipline/methodology skills (question framing, pre-registration, verification-before-claiming, red-team review, …) — [`science-superpowers`](https://github.com/K-Dense-AI/science-superpowers)
   - 503 profession-specific expert-reasoning skills (accelerator-physicist, zoologist, actuarial-scientist, …), converted from AGENTS.md profiles — [`scientific-agents`](https://github.com/K-Dense-AI/scientific-agents)
@@ -76,6 +76,9 @@ The preset picker remembers your last choice per browser, so you'll typically on
   - a `docx-editor-zotero` skill (edit `.docx` files without breaking Zotero citations) — adapted from [`claude-scientific-writer`](https://github.com/K-Dense-AI/claude-scientific-writer)
   - an `agentic-data-science-pipeline` skill (plan/review/implement/verify/reflect loop for large multi-stage tasks) — adapted from [`agentic-data-scientist`](https://github.com/K-Dense-AI/agentic-data-scientist)
   - a `hyperparameter-optimization` skill (pre-registered, verify-before-claiming search loop for tuning a DL/LLM model) — adapted from [`karpathy`](https://github.com/K-Dense-AI/karpathy)
+  - a `scientific-figure-making` skill (publication matplotlib house style + helpers for bars/trends/heatmaps) — adapted from [`figures4papers`](https://github.com/ChenLiu-1996/figures4papers)
+  - a `diagram-design` skill (39 editorial HTML+SVG diagram types; no Mermaid slop) — vendored from [`diagram-design`](https://github.com/cathrynlavery/diagram-design)
+  - a `generating-scientific-hypotheses` skill (literature-grounded hypothesis generation: search-checked novelty, ranked falsifiable cards) — first-party, distilled from Gottweis et al. / Ghareeb et al. 2026 (see [NOTICE](NOTICE))
 
   `RESEARCHCRAFT_SKILLS_DIR` (or a `~/scientific-agent-skills/skills` checkout) still works as an override if you want a different catalogue instead — available on every preset
 - `notebook` tool — log, read, and export a living lab notebook (JSONL under `<cwd>/.dsh/notebook/`), shared across a subagent delegation tree, with a zip-bundle export alongside the plain Markdown one — every preset
@@ -196,11 +199,11 @@ Set `SUBAGENT_MODEL_COMPLEX`/`SUBAGENT_MODEL_VISION` via Settings → ResearchCr
 
 ## Figures
 
-The system prompt steers the agent to pick a figure tool by content, not by habit:
+The system prompt steers the agent to pick a figure tool by content, not by habit, and to load the matching skill before drawing:
 
-- **Numeric data** (plots, charts, distributions, trends) — real Python (matplotlib/seaborn/etc.) output over real computed data, never `image_generate` and never fabricated values.
-- **Flow/process diagrams, pipelines, architecture, decision trees** — a Mermaid code block, kept editable as plain text. The agent checks with the user first before using it in place of a rendered image, since Mermaid renders in Markdown viewers (GitHub, VS Code, Obsidian, this chat) but not inside a compiled LaTeX PDF.
-- **Everything else** — conceptual schematics, illustrations, infographics with no real data or defined flow — `image_generate`.
+- **Numeric data** (plots, charts, distributions, trends) — `scientific-figure-making`: real matplotlib over real computed data, house-style helpers, PNG+PDF export. Never `image_generate` and never fabricated values. Named journals also load `scientific-visualization` for column widths.
+- **Structural diagrams** (architecture, pipelines, flowcharts, method schematics, CONSORT, trees, timelines) — `diagram-design`: self-contained HTML+SVG editorial diagrams (one accent, no shadows, orthogonal connectors). Not Mermaid rounded boxes, not `image_generate`. For a paper or compiled PDF the agent also exports PNG/SVG. Mermaid is only when the user explicitly wants a git-diffable markdown diagram.
+- **Conceptual illustrations** with no defined structure and no real numbers — `image_generate`.
 
 ### Image generation
 
@@ -284,4 +287,4 @@ npm run build # after any client/ change — rebuilds lib/client.js
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Scientific skills are vendored or adapted from seven open-source K-Dense-AI projects (`scientific-agent-skills`, `science-superpowers`, `scientific-agents`, `claude-scientific-writer`, `drug-discovery-agent-skills`, `agentic-data-scientist`, `karpathy`), all MIT; see [NOTICE](NOTICE) for exactly what was copied, renamed, or adapted from each.
+MIT — see [LICENSE](LICENSE). Scientific skills are vendored or adapted from several open-source catalogues; see [NOTICE](NOTICE) for exactly what was copied, renamed, or adapted from each.

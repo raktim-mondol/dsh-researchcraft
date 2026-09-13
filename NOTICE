@@ -74,6 +74,38 @@ verify-before-claiming hyperparameter search) was carried over, rewritten
 for this plugin's own tools and narrowed to the hyperparameter-tuning use
 case.
 
+The `generating-scientific-hypotheses` skill (`skills/generating-scientific-hypotheses`)
+is a first-party procedure distilled from two *Nature* papers (no paper text
+was copied): Gottweis et al., “Accelerating scientific discovery with
+Co-Scientist”, *Nature* (2026), https://doi.org/10.1038/s41586-026-10644-y
+(CC BY 4.0); and Ghareeb et al., “A multi-agent system for automating
+scientific discovery”, *Nature* (2026),
+https://doi.org/10.1038/s41586-026-10652-y (CC BY-NC-ND 4.0). The
+evaluation axes, literature-before-claiming-novelty, and
+mechanism→assay→candidate shape were rewritten for this plugin’s own
+tools. The existing `hypothesis-generator` specialist brief points at that
+skill; it is not a second copy of the procedure.
+
+The `scientific-figure-making` skill (`skills/scientific-figure-making`) is a
+fresh adaptation of the publication-figure workflow described in Chen Liu's
+`figures4papers` repository (CC BY-NC 4.0) —
+https://github.com/ChenLiu-1996/figures4papers. No file from that repository
+was copied (its license is non-commercial). The house-style conventions
+(semantic palette, spine/legend/export policy, grouped-bar and trend
+patterns) were rewritten for this plugin's tools, and the helper API that
+the upstream skill specifies but does not ship is implemented here as
+`scripts/publication_figure.py`.
+
+The `diagram-design` skill (`skills/diagram-design`) is vendored from the
+open-source `cathrynlavery/diagram-design` project (MIT License). The
+example-gallery HTML (`example-*.html`, `assets/index.html`) was not copied
+— templates, type references, import/export scripts, and the self-check are
+included, along with that project's `LICENSE` and `THIRD_PARTY_LICENSES.md`
+(Tabler Icons MIT, Simple Icons CC0). A short ResearchCraft mapping was
+added at the top of `SKILL.md` (paper-first PNG/SVG export, skip website
+brand onboarding unless asked, `uv run python`); the rest of the skill is
+unmodified.
+
 The `python-helpers/` scientific-file-format decoders (chemistry, structure,
 mass spec, arrays, imaging, AnnData) and the `workflows.json` research-task
 template catalogue are adapted from the ResearchCraft codebase (MIT), a

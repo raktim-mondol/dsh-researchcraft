@@ -303,12 +303,12 @@
     "description": "Publication-quality plots and visualizations from data",
     "category": "visual",
     "icon": "BarChart3",
-    "prompt": "Create publication-quality figures from the uploaded data using only real values present in the data. Inspect the data first, then choose the chart type that fits its structure and the comparison being made (e.g., bars for categorical counts, lines for trends, box/violin or scatter for distributions). Label every axis with units, add legends and clear tick formatting, and use a colorblind-safe palette with honest, non-truncated scales. Apply a clean, consistent style with legible fonts, minimal gridlines, and no chartjunk; show uncertainty (error bars, CI) where relevant. Target standard journal specs: vector-friendly layout, 300+ DPI, and single- or double-column proportions. If figure type, grouping, or target journal is ambiguous and would change the result, ask one quick clarifying question via the interview tool; otherwise state assumptions. Save each figure as a high-resolution PNG plus an editable source (SVG or PDF) and list the file names in chat. {instructions}",
+    "prompt": "Create publication-quality figures from the uploaded data using only real values present in the data. Inspect the data first, then choose the chart type that fits its structure and the comparison being made (e.g., bars for categorical counts, lines for trends, box/violin or scatter for distributions). Label every axis with units, add legends and clear tick formatting, and use a colorblind-safe palette with honest, non-truncated scales. Apply a clean, consistent style with legible fonts, minimal gridlines, and no chartjunk; show uncertainty (error bars, CI) where relevant. Target standard journal specs: vector-friendly layout, 300+ DPI, and single- or double-column proportions. If figure type, grouping, or target journal is ambiguous and would change the result, ask one quick clarifying question via the interview tool; otherwise state assumptions. Load scientific-figure-making first (house style + helpers, PNG+PDF). If a target journal is named, also load scientific-visualization for column widths. Save each figure as a high-resolution PNG plus an editable source (SVG or PDF) and list the file names in chat. {instructions}",
     "suggestedSkills": [
+      "scientific-figure-making",
       "scientific-visualization",
       "matplotlib",
-      "seaborn",
-      "plotly"
+      "seaborn"
     ],
     "placeholders": [
       {
@@ -374,11 +374,11 @@
     "description": "Mechanistic or conceptual diagram of a process",
     "category": "visual",
     "icon": "Palette",
-    "prompt": "Create a scientific schematic diagram illustrating: {concept}. Clearly show the key components, their relationships, and the flow of the process using arrows and consistent visual encoding (shape/color = type of entity), following standard conventions for the relevant field. Establish a clear reading order, use clean lines, even spacing, and concise labels with units where applicable; never invent mechanisms or quantities not implied by the concept. Apply a colorblind-safe palette, legible fonts, high contrast, and minimal clutter so it remains readable when scaled to journal column width. Add a short caption stating what the schematic depicts. If important details (scale, level of mechanistic detail, target journal style) are ambiguous and would change the result, ask one quick clarifying question via the interview tool; otherwise state assumptions. Save the schematic as a high-resolution PNG plus an editable source (SVG or Mermaid file) and list the file names in chat.",
+    "prompt": "Create a scientific schematic diagram illustrating: {concept}. Clearly show the key components, their relationships, and the flow of the process using arrows and consistent visual encoding (shape/color = type of entity), following standard conventions for the relevant field. Establish a clear reading order, use clean lines, even spacing, and concise labels with units where applicable; never invent mechanisms or quantities not implied by the concept. Apply a colorblind-safe palette, legible fonts, high contrast, and minimal clutter so it remains readable when scaled to journal column width. Add a short caption stating what the schematic depicts. If important details (scale, level of mechanistic detail, target journal style) are ambiguous and would change the result, ask one quick clarifying question via the interview tool; otherwise state assumptions. For a boxes-and-arrows / architecture / pipeline schematic, load diagram-design and save self-contained HTML+SVG plus a PNG export; for a photorealistic or freeform illustration with no defined structure, use image_generate. Do not default to Mermaid. List the file names in chat.",
     "suggestedSkills": [
+      "diagram-design",
       "scientific-schematics",
-      "generate-image",
-      "scientific-visualization"
+      "generate-image"
     ],
     "placeholders": [
       {
@@ -395,11 +395,10 @@
     "description": "Experimental or analytical workflow diagram",
     "category": "visual",
     "icon": "Network",
-    "prompt": "Create a detailed flowchart for: {workflow}. Show all decision points, parallel processes, inputs/outputs, and terminal outcomes, with a clear top-to-bottom or left-to-right reading order and labeled connectors (e.g., yes/no on decision branches). Use standard symbols: rectangles for processes, diamonds for decisions, ovals for start/end, and parallelograms for inputs/outputs. Apply consistent color coding for different phases with a colorblind-safe palette and a small legend, plus legible fonts, even spacing, and minimal crossing lines. Keep labels concise and accurate to the described workflow; do not invent steps. If the workflow has ambiguous branching or scope that would change the diagram, ask one quick clarifying question via the interview tool; otherwise state assumptions. Save the flowchart as a high-resolution PNG plus an editable source (Mermaid file or SVG) and list the file names in chat.",
+    "prompt": "Create a detailed flowchart for: {workflow}. Show all decision points, parallel processes, inputs/outputs, and terminal outcomes, with a clear top-to-bottom or left-to-right reading order and labeled connectors (e.g., yes/no on decision branches). Use standard symbols: rectangles for processes, diamonds for decisions, ovals for start/end, and parallelograms for inputs/outputs. Apply consistent color coding for different phases with a colorblind-safe palette and a small legend, plus legible fonts, even spacing, and minimal crossing lines. Keep labels concise and accurate to the described workflow; do not invent steps. If the workflow has ambiguous branching or scope that would change the diagram, ask one quick clarifying question via the interview tool; otherwise state assumptions. Load diagram-design and save a self-contained HTML+SVG editorial flowchart plus a PNG export for papers; do not default to Mermaid rounded boxes. List the file names in chat.",
     "suggestedSkills": [
-      "scientific-visualization",
-      "scientific-schematics",
-      "generate-image"
+      "diagram-design",
+      "scientific-visualization"
     ],
     "placeholders": [
       {
@@ -416,11 +415,11 @@
     "description": "Visual timeline of project milestones and deliverables",
     "category": "visual",
     "icon": "Timer",
-    "prompt": "Create a visual research timeline for a project on: {project}, spanning {duration}. Lay out key milestones, deliverables, and work packages along a time axis in Gantt-chart style, showing durations, dependencies (linked bars or arrows), and go/no-go decision points as distinct markers. Use color-coded phases with a colorblind-safe palette and a clear legend, a labeled time axis with sensible tick intervals matching {duration}, and legible fonts with even row spacing. Keep the structure realistic and consistent; do not invent milestones beyond what the project implies. Ensure it reads clearly left-to-right and stays legible at report and slide sizes. If the milestone list or phase breakdown is unspecified and would change the result, ask one quick clarifying question via the interview tool; otherwise state your assumptions. Save the timeline as a high-resolution PNG plus an editable source (SVG or the plotting script) and list the file names in chat.",
+    "prompt": "Create a visual research timeline for a project on: {project}, spanning {duration}. Lay out key milestones, deliverables, and work packages along a time axis in Gantt-chart style, showing durations, dependencies (linked bars or arrows), and go/no-go decision points as distinct markers. Use color-coded phases with a colorblind-safe palette and a clear legend, a labeled time axis with sensible tick intervals matching {duration}, and legible fonts with even row spacing. Keep the structure realistic and consistent; do not invent milestones beyond what the project implies. Ensure it reads clearly left-to-right and stays legible at report and slide sizes. If the milestone list or phase breakdown is unspecified and would change the result, ask one quick clarifying question via the interview tool; otherwise state your assumptions. Load diagram-design (timeline or Gantt type) and save self-contained HTML+SVG plus a PNG export; do not default to Mermaid. List the file names in chat.",
     "suggestedSkills": [
-      "scientific-visualization",
-      "matplotlib",
-      "generate-image"
+      "diagram-design",
+      "scientific-figure-making",
+      "matplotlib"
     ],
     "placeholders": [
       {
@@ -444,10 +443,10 @@
     "icon": "LayoutGrid",
     "prompt": "Create a publication-quality heatmap from the uploaded matrix data, using the real values only. (1) Apply appropriate clustering (hierarchical or k-means) to rows and columns if it aids interpretation, (2) choose a perceptually uniform colormap (sequential for one-directional data, diverging centered at a meaningful midpoint for signed data), (3) add dendrograms when clustered, (4) label rows, columns, and axes clearly with legible fonts, (5) include a color bar with units and an honest, non-misleading scale. Consider standardizing or log-transforming only when justified and state it. Use a colorblind-safe palette, annotate cells only if the matrix is small enough to stay readable, and keep it legible at journal column width with no chartjunk. If clustering choice or normalization is ambiguous and would change the result, ask one quick clarifying question via the interview tool; otherwise state assumptions. Save the heatmap as a high-resolution PNG plus an editable source (SVG or PDF) and list the file names in chat. {instructions}",
     "suggestedSkills": [
+      "scientific-figure-making",
       "scientific-visualization",
       "seaborn",
-      "matplotlib",
-      "plotly"
+      "matplotlib"
     ],
     "placeholders": [
       {
