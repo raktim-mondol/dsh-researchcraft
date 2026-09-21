@@ -337,3 +337,13 @@
 # here rather than global for the same reason as consensus-search above.
 - id: paper-download
   name: dsh-researchcraft/paper-download
+
+# PaperMemory local academic memory (stdio MCP via `papermemory mcp`).
+# Surfaces as `mcp__papermemory__*` (search, ingest, cite, cite-check, recap,
+# remember, claim, lesson, get) when the CLI is on PATH or the plugin-managed
+# venv is ready; skips the mount (and logs) when it is not, so a missing
+# install does not take this preset down. Store is the default PaperMemory
+# SQLite DB. Auto-installs on first ResearchCraft start; see papermemory.js.
+# No realm. paper_download also auto-ingests the saved PDF into this store.
+- id: papermemory
+  name: dsh-researchcraft/papermemory

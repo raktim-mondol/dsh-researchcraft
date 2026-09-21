@@ -106,6 +106,20 @@ added at the top of `SKILL.md` (paper-first PNG/SVG export, skip website
 brand onboarding unless asked, `uv run python`); the rest of the skill is
 unmodified.
 
+PaperMemory (`vendor/papermemory/` plus `skills/papermemory/SKILL.md`) is
+vendored from the open-source `raktim-mondol/papermemory` project (MIT
+License) — https://github.com/raktim-mondol/papermemory. The Python package
+(CLI, SQLite store) is unmodified except `mcp_server.py`: DSH's MCP SDK
+speaks newline-delimited JSON on stdio, while upstream only spoke LSP
+Content-Length headers, so the handshake deadlocked and tools never
+registered. The vendored server now detects the inbound framing and replies
+in kind. PDF/markdown ingest also accepts `--doi` / `--pdf-path` so a
+downloaded PDF and its `pdf_to_markdown` output merge onto one verified
+PaperMemory record instead of a second unverified local-pdf row. The skill body was rewritten for this plugin's MCP tool names
+(`mcp__papermemory__*`), `paper_download` auto-ingest, and the ResearchCraft
+preset; citation-integrity rules are unchanged. Tests from that repository
+were not copied.
+
 The `python-helpers/` scientific-file-format decoders (chemistry, structure,
 mass spec, arrays, imaging, AnnData) and the `workflows.json` research-task
 template catalogue are adapted from the ResearchCraft codebase (MIT), a

@@ -17,3 +17,8 @@ consistent terminology and tense, make claims match the evidence presented,
 and flag (do not invent) missing pieces a venue would require. Work on the
 file in place when asked to edit; otherwise return the revision plus a summary
 of substantive changes. Never alter numbers, units, or citations.
+
+When editing a manuscript that uses in-text citation keys, run
+`mcp__papermemory__papermemory_cite_check` on the project slug before
+calling the section done, and do not invent a bibtex key, title, year, or
+DOI to close a gap.

@@ -61,7 +61,7 @@ Switching to `dsh-tui` / `dsh-web` also clears a *global* agent-presets default 
 2. Click the preset selector at the top of the message box (reads "PTC mode", "Standard mode", or similar by default).
 3. Choose **ResearchCraft** from the list.
 
-The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), academic search (`mcp__parallel__*`, `parallel_search`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`), and workspace semantic search (`mcp__zvec_grep__zvec_grep_search`) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, pdf_to_markdown, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset. Native `grep` / `glob` come from the ResearchCraft preset's filesystem-search row.
+The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), academic search (`mcp__parallel__*`, `parallel_search`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`), PaperMemory (`mcp__papermemory__*`), and workspace semantic search (`mcp__zvec_grep__zvec_grep_search`) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, pdf_to_markdown, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset. Native `grep` / `glob` come from the ResearchCraft preset's filesystem-search row.
 
 The preset picker remembers your last choice per browser, so you'll typically only need to do this once.
 
@@ -91,9 +91,10 @@ The preset picker remembers your last choice per browser, so you'll typically on
 - `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload, plus bundled `modal`/`runpod` skills covering the rest of each CLI (Serverless endpoints, volumes/secrets, Hub templates, …) — see [Remote compute](#remote-compute) — every preset
 - `workflow` tool over a ~330-template research-task catalogue — every preset
 - Academic search: Parallel, Firecrawl, Scite (MCP connectors), `parallel_search` / `consensus_search` (native REST tools), and `paper_download` (Unpaywall open-access PDF resolver) — **ResearchCraft preset only**
+- [PaperMemory](https://github.com/raktim-mondol/papermemory) local academic memory: `mcp__papermemory__*` (search, ingest, cite, cite-check, recap, remember, claim). First ResearchCraft start uses `papermemory` on PATH or installs the vendored package into `~/.dsh/papermemory`. `paper_download` auto-ingests the saved PDF. Store: `~/.local/share/papermemory/papermemory.db` — **ResearchCraft preset only** — see [Paper memory](#paper-memory)
 - Workspace semantic search via [zvec-grep](https://github.com/zvec-ai/zvec-grep): `mcp__zvec_grep__zvec_grep_search` (local BM25 + vectors). First ResearchCraft start installs the `zg` CLI into `~/.dsh/zvec-grep`. Indexing is **off at session start by default** (Settings → Index at session start); you can index later from chat, and the agent asks first when semantic search would help. While indexing, a progress bar with estimated time and Cancel is shown (no timeout) — exact lookup stays on native `grep` / `glob` — **ResearchCraft preset only** — see [Workspace search](#workspace-search)
 - Bundled `agent-browser` skill for interactive web browsing (navigate, log in, fill forms, download datasets), with screenshots delegated to `subagent_vision` — see [Browsing the web](#browsing-the-web) — every preset
-- A **Settings → ResearchCraft API keys** page for all of the above — no shell env vars required
+- A **Settings → ResearchCraft API keys** page for the connectors and models above — no shell env vars required. PaperMemory needs no key.
 
 ## API keys
 
@@ -106,9 +107,9 @@ The same Settings page also has an **Image model** dropdown for `IMAGE_MODEL` �
 
 Tools that call `resolveEnv()` per invocation (`image_generate`, `modal_run`, `runpod_run`, `consensus_search`, `parallel_search`, `paper_download`) pick up a Settings change on the very next call, no restart needed.
 
-The MCP connectors (Parallel, Firecrawl, Scite, zvec-grep) and the two subagent-model fields are different: the `researchcraft` agent preset mounts once as a standing composition shared by every chat session for the life of the running `dsh` process, so a change only reaches them after you **stop and restart `dsh` itself** — a new chat session on the same running process is not enough. `consensus_search` and `parallel_search` aren't MCP connectors — see below — so they don't have this restart requirement.
+The MCP connectors (Parallel, Firecrawl, Scite, zvec-grep, PaperMemory) and the two subagent-model fields are different: the `researchcraft` agent preset mounts once as a standing composition shared by every chat session for the life of the running `dsh` process, so a change only reaches them after you **stop and restart `dsh` itself** — a new chat session on the same running process is not enough. `consensus_search` and `parallel_search` aren't MCP connectors — see below — so they don't have this restart requirement.
 
-**Also make sure the chat session is actually on the ResearchCraft preset.** The MCP connectors, native academic-search tools (`consensus_search`, `parallel_search`), and `mcp__zvec_grep__zvec_grep_search` are wired into the `researchcraft` agent preset only; a session left on the default preset (Standard/PTC/etc.) has none of them, and calling one fails with `tools[name] is not a function`. Check the preset selector next to the session title (top of the message box for a new chat, top-left of an existing one) reads "ResearchCraft" before asking the agent to search.
+**Also make sure the chat session is actually on the ResearchCraft preset.** The MCP connectors, native academic-search tools (`consensus_search`, `parallel_search`), `mcp__zvec_grep__zvec_grep_search`, and `mcp__papermemory__*` are wired into the `researchcraft` agent preset only; a session left on the default preset (Standard/PTC/etc.) has none of them, and calling one fails with `tools[name] is not a function`. Check the preset selector next to the session title (top of the message box for a new chat, top-left of an existing one) reads "ResearchCraft" before asking the agent to search.
 
 ## Workspace search
 
@@ -165,7 +166,36 @@ The system prompt steers the agent to use **both** `consensus_search` and `paral
 
 [Consensus](https://consensus.app) is a native `consensus_search` tool (not an MCP connector) over its `GET /v1/search` REST API — plain `x-api-key` auth, no OAuth. Requires `CONSENSUS_API_KEY` (required — the tool returns a clear error, not a disabled connector, when unset). Supports the API's full filter set: study type, year/month range, sample size, journal quartile (SJR), citation count, study duration, domain, country, publisher, open-access/preprint/human/controlled/clinical-guideline flags, and pagination.
 
-[Unpaywall](https://unpaywall.org) backs `paper_download` (also a native REST tool, not an MCP connector): given a DOI, it resolves the best open-access location and the tool downloads that PDF straight into the workspace (or downloads a direct URL you already have, no DOI needed). Requires `UNPAYWALL_EMAIL` — Unpaywall's API asks callers to identify themselves with a real contact email; the tool returns a clear error, not a disabled connector, when unset, and never invents one on your behalf. When a DOI has no open-access copy, the tool returns a plain "paywalled" result (with the landing-page URL) rather than an error — the agent is steered to report that honestly instead of inferring the paper's content from a search snippet. The response is also checked against the PDF magic bytes before being saved, so a login/CAPTCHA page returned instead of the real file surfaces as a clear error rather than a corrupt "PDF."
+[Unpaywall](https://unpaywall.org) backs `paper_download` (also a native REST tool, not an MCP connector): given a DOI, it resolves the best open-access location and the tool downloads that PDF straight into the workspace (or downloads a direct URL you already have, no DOI needed). Requires `UNPAYWALL_EMAIL` — Unpaywall's API asks callers to identify themselves with a real contact email; the tool returns a clear error, not a disabled connector, when unset, and never invents one on your behalf. When a DOI has no open-access copy, the tool returns a plain "paywalled" result (with the landing-page URL) rather than an error — the agent is steered to report that honestly instead of inferring the paper's content from a search snippet. The response is also checked against the PDF magic bytes before being saved, so a login/CAPTCHA page returned instead of the real file surfaces as a clear error rather than a corrupt "PDF." A successful download is ingested into PaperMemory (see [Paper memory](#paper-memory)); ingest failure does not fail the download.
+
+## Paper memory
+
+[PaperMemory](https://github.com/raktim-mondol/papermemory) is the local academic-memory layer on the ResearchCraft preset: papers (title, authors, year, venue, DOI, arXiv, bibtex key), claims with quoted evidence, citation graphs, manuscript recap, and cite-check. It is how the agent remembers papers it has read and cites without inventing references — open-web and peer-reviewed discovery stays on Parallel / Consensus / Firecrawl / Scite.
+
+You do **not** install PaperMemory yourself. The first time the ResearchCraft preset mounts after `dsh plugin add`, the plugin uses `papermemory` already on `PATH` if present, otherwise installs the vendored package (with `pypdf`) into `~/.dsh/papermemory` via `uv` (or `python -m venv` + pip). It then mounts `mcp__papermemory__*` over stdio (`papermemory mcp`) — no second restart. If install or the MCP handshake fails, the rest of the preset still loads and the memory tools are absent (a warning is logged). Override with `PAPERMEMORY_CLI` if you already have a binary you want to keep; `PAPERMEMORY_SKIP_INSTALL=1` skips the bundled venv.
+
+The SQLite store is PaperMemory's default: `~/.local/share/papermemory/papermemory.db` (override `PAPERMEMORY_DB` or `PAPERMEMORY_DATA_DIR`). A standalone `papermemory` CLI, Grok, and ResearchCraft share that same database. No API key.
+
+| Tool | What it does |
+|---|---|
+| `mcp__papermemory__papermemory_recap` | Writing-project briefing: venue, sections, contributions, citation gaps |
+| `mcp__papermemory__papermemory_search` | Hybrid search over papers, claims, chunks, notes, lessons |
+| `mcp__papermemory__papermemory_ingest` | Ingest a local PDF/BibTeX/markdown/manuscript path, or an arXiv id / DOI |
+| `mcp__papermemory__papermemory_get` | Paper by id or bibtex key, with claims and chunks |
+| `mcp__papermemory__papermemory_cite` | Find a stored paper to cite. Empty result means do not invent a citation |
+| `mcp__papermemory__papermemory_cite_check` | Compare a manuscript's in-text keys against memory |
+| `mcp__papermemory__papermemory_remember` | Save a writing/reading decision |
+| `mcp__papermemory__papermemory_claim` | Store a claim with optional evidence quote |
+| `mcp__papermemory__papermemory_lesson` | Save a durable academic writing/reading rule |
+
+`paper_download` calls ingest on the saved PDF (and DOI metadata when a DOI was given). The agent is steered to `recap` on paper-writing tasks, to cite only memory hits, and to `cite_check` before treating a section as finished. Load the bundled `papermemory` skill (`skills/papermemory`) for the full workflow.
+
+| Setting / env | What it does |
+|---|---|
+| `PAPERMEMORY_CLI` | Absolute path to a `papermemory` binary. Env only. |
+| `PAPERMEMORY_DB` / `PAPERMEMORY_DATA_DIR` | Override the SQLite store location. Env only. |
+| `PAPERMEMORY_PROJECT` | Default project slug for `paper_download` auto-ingest. Env only; otherwise the workspace directory name. |
+| `PAPERMEMORY_SKIP_INSTALL` | `1` to skip installing the bundled venv (PATH / `PAPERMEMORY_CLI` still work). |
 
 ## Browsing the web
 
@@ -230,7 +260,7 @@ The tool finds `python-helpers/.venv` automatically. Override with `RESEARCHCRAF
 
 ## Downloading and reading papers
 
-Two tools cover the full loop for actually reading a paper rather than just its abstract: `paper_download` (ResearchCraft preset only — see [Academic search](#academic-search)) gets the PDF onto disk, and `pdf_to_markdown` (every preset) turns it into readable text.
+Two tools cover the full loop for actually reading a paper rather than just its abstract: `paper_download` (ResearchCraft preset only — see [Academic search](#academic-search)) gets the PDF onto disk, and `pdf_to_markdown` (every preset) turns it into readable text. A successful `paper_download` is also ingested into PaperMemory (see [Paper memory](#paper-memory)).
 
 ### PDF to Markdown
 

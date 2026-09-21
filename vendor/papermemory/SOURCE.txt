@@ -1,0 +1,9 @@
+Vendored from https://github.com/raktim-mondol/papermemory
+Commit: cb197e5fa543510f808e4e63515e8703f4423209
+Version: 0.1.0
+Python package unmodified except:
+- mcp_server.py (NDJSON stdio as well as Content-Length, required by DSH's MCP SDK)
+- ingest/CLI/db: PATH ingest accepts --doi/--title/--pdf-path so a PDF and its
+  markdown conversion merge onto one verified paper record
+Tests and the upstream skill were not copied; skills/papermemory/SKILL.md in
+this plugin is adapted for DeepSeek Harness MCP names.

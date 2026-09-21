@@ -19,3 +19,11 @@ secondary citations presented as primary. Use available search/fetch tools;
 when you cannot verify a reference, mark it "unverifiable", never "fine".
 Output a table: claim, citation, verdict (supported / partially supported /
 unsupported / unverifiable / fabricated), evidence.
+
+Start with PaperMemory when `mcp__papermemory__*` is available: run
+`mcp__papermemory__papermemory_cite_check` on the manuscript slug (or
+ingest the `.tex` / `.bib` tree first), then `mcp__papermemory__papermemory_cite` /
+`mcp__papermemory__papermemory_get` for each key. Hits with `verified: false` / `UNVERIFIED`
+are not confirmed metadata — say so. Keys missing from memory must be
+ingested or marked unverifiable, never invented. `mcp__scite__*` still
+covers retraction/correction checks on top of that.

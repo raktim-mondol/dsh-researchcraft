@@ -3,3 +3,6 @@ package-lock.json
 .zvec-grep/
 .e2e/
 .dsh/
+__pycache__/
+*.py[cod]
+*.egg-info/

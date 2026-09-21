@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import { ingestConvertedMarkdown, projectSlugFromCwd } from './papermemory-cli.js'
 
 const INLINE_PREVIEW_CHARS = 4_000
 
@@ -33,7 +34,8 @@ export function applyPdfToMarkdown(ctx) {
       'survey. Prefer this over reading a PDF as raw text or shelling out to another converter.',
       'Pass write_to to save the Markdown to a file instead of returning it inline — do this for anything but a',
       'short excerpt, since a literature survey converting many PDFs will otherwise flood the conversation with',
-      'full-paper text. Scanned/image-based pages come back without markdown unless ocr is set to true, which',
+      'full-paper text. write_to also ingests the Markdown into PaperMemory, merging onto the paper_download',
+      'record for the same PDF when one exists. Scanned/image-based pages come back without markdown unless ocr is set to true, which',
       'requires the PDFium and ONNX Runtime shared libraries to be installed locally (see the plugin README);',
       'without them, pass ocr:true anyway to see which pages were flagged as needing OCR, then fall back to',
       'subagent_vision on rendered page images for those pages.',
@@ -62,7 +64,16 @@ export function applyPdfToMarkdown(ctx) {
         if (typeof value.confidence === 'number') bits.push(`confidence: ${value.confidence.toFixed(2)}`)
         if (value.pages_needing_ocr?.length) bits.push(`pages needing OCR: ${value.pages_needing_ocr.join(',')}`)
         const head = bits.join(', ')
-        if (value.written_to) return [{ type: 'text', text: `${head}\nwritten to: ${value.written_to}` }]
+        if (value.written_to) {
+          let text = `${head}\nwritten to: ${value.written_to}`
+          if (value.papermemory?.ok) {
+            const key = value.papermemory.bibtex_key
+            text += `\nPaperMemory: ingested markdown${key ? ` as ${key}` : ''}${value.papermemory.doi ? ` doi ${value.papermemory.doi}` : ''}`
+          } else if (value.papermemory?.error) {
+            text += `\nPaperMemory ingest skipped: ${value.papermemory.error}`
+          }
+          return [{ type: 'text', text }]
+        }
         const md = value.markdown ?? ''
         const preview = md.length > INLINE_PREVIEW_CHARS ? `${md.slice(0, INLINE_PREVIEW_CHARS)}\n… (truncated, ${md.length} chars total — pass write_to to get the full file)` : md
         return [{ type: 'text', text: `${head}\n\n${preview}` }]
@@ -110,6 +121,16 @@ export function applyPdfToMarkdown(ctx) {
         writeFileSync(outAbs, out.markdown, 'utf8')
         delete out.markdown
         out.written_to = args.write_to
+        try {
+          out.papermemory = await ingestConvertedMarkdown({
+            path: outAbs,
+            pdfPath: target,
+            project: process.env.PAPERMEMORY_PROJECT?.trim() || projectSlugFromCwd(cwd),
+            signal: exec.signal,
+          })
+        } catch (error) {
+          out.papermemory = { ok: false, error: error instanceof Error ? error.message : String(error) }
+        }
       }
       return out
     },

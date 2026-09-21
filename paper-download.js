@@ -6,10 +6,11 @@
  * an academic-search capability that needs its own credential (a contact
  * email Unpaywall's terms ask API callers to identify themselves with).
  */
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { resolveEnv } from './credential-env.js'
+import { ingestDownloadedPaper, projectSlugFromCwd } from './papermemory-cli.js'
 
 const UNPAYWALL_URL = 'https://api.unpaywall.org/v2'
 const MAX_BYTES = 100 * 1024 * 1024
@@ -119,10 +120,12 @@ export function apply(ctx) {
       'callers to identify themselves with a real contact email; it does not require url. When a DOI has no',
       'open-access copy, this returns a clear "paywalled" result (not an error) with the landing-page URL so you',
       'can tell the user rather than guessing at the content or fabricating what the paper says.',
+      'On success the PDF is also ingested into PaperMemory (mcp__papermemory__*) so later cite/get/recap',
+      'calls can use it — ingest failure does not fail the download.',
     ].join(' '),
     parameters: {
-      doi: { type: 'string', description: 'DOI to resolve via Unpaywall, e.g. "10.1371/journal.pone.0130140" (bare or as a doi.org URL).' },
-      url: { type: 'string', description: 'Direct URL to a PDF to download, used instead of doi when you already have the link.' },
+      doi: { type: 'string', description: 'DOI to resolve via Unpaywall, e.g. "10.1371/journal.pone.0130140" (bare or as a doi.org URL). Also used to tag PaperMemory ingest when url is given.' },
+      url: { type: 'string', description: 'Direct URL to a PDF to download. When set with doi, the URL is fetched and the DOI is still stored on the PaperMemory record.' },
       path: { type: 'string', required: true, description: 'Workspace-relative output path, e.g. papers/lang-2023-masai.pdf' },
     },
     output: {
@@ -137,26 +140,38 @@ export function apply(ctx) {
         if (value.title) bits.push(`title: ${value.title}`)
         if (value.oa_status) bits.push(`oa_status: ${value.oa_status}${value.license ? `, license: ${value.license}` : ''}`)
         bits.push(`source: ${value.source_url}`)
-        bits.push('Next: call pdf_to_markdown on this path to read it.')
+        if (value.papermemory?.ok) {
+          const key = value.papermemory.bibtex_key
+          bits.push(`PaperMemory: ingested${key ? ` as ${key}` : ''}${value.papermemory.verified ? ' (verified)' : ' (UNVERIFIED until DOI/arXiv lookup)'}.`)
+        } else if (value.papermemory?.error) {
+          bits.push(`PaperMemory ingest skipped: ${value.papermemory.error}`)
+        }
+        bits.push('Next: call pdf_to_markdown on this path to read it; use mcp__papermemory__papermemory_get / mcp__papermemory__papermemory_cite for stored claims and citations.')
         return [{ type: 'text', text: bits.join('\n') }]
       },
     },
     async execute(args, exec) {
       if (!args.doi && !args.url) return { success: false, error: 'give either doi or url' }
 
+      const doi = args.doi ? normalizeDoi(args.doi) : undefined
       let pdfUrl = args.url
       let meta = {}
-      if (args.doi) {
+      if (doi) {
         const email = await resolveEnv('UNPAYWALL_EMAIL')
-        if (!email) {
+        if (!email && !pdfUrl) {
           return { success: false, error: 'UNPAYWALL_EMAIL is not set (Settings -> ResearchCraft API keys, or the matching env var).' }
         }
-        const resolved = await resolveOpenAccess(normalizeDoi(args.doi), email, exec.signal)
-        if (!resolved.found) {
-          return { success: false, ...resolved }
+        if (email) {
+          const resolved = await resolveOpenAccess(doi, email, exec.signal)
+          if (resolved.title) meta = { ...meta, ...resolved }
+          if (!pdfUrl) {
+            if (!resolved.found) {
+              return { success: false, ...resolved }
+            }
+            pdfUrl = resolved.pdfUrl
+            meta = resolved
+          }
         }
-        pdfUrl = resolved.pdfUrl
-        meta = resolved
       }
 
       const cwd = workspaceRoot(exec)
@@ -177,6 +192,20 @@ export function apply(ctx) {
 
       mkdirSync(dirname(out), { recursive: true })
       writeFileSync(out, buffer)
+
+      let papermemory
+      try {
+        papermemory = await ingestDownloadedPaper({
+          path: out,
+          doi,
+          title: meta.title,
+          project: process.env.PAPERMEMORY_PROJECT?.trim() || projectSlugFromCwd(cwd),
+          signal: exec.signal,
+        })
+      } catch (error) {
+        papermemory = { ok: false, error: error instanceof Error ? error.message : String(error) }
+      }
+
       return {
         success: true,
         path: args.path,
@@ -185,6 +214,7 @@ export function apply(ctx) {
         title: meta.title,
         oa_status: meta.oa_status,
         license: meta.license,
+        papermemory,
       }
     },
     presentCall(args) {

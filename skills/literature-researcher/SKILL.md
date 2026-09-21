@@ -41,4 +41,14 @@ When a claim needs the full text rather than an abstract, call
 `paper_download` with the DOI to pull an open-access copy into the workspace
 before reading it — don't reason from a search snippet alone when the actual
 paper is available. If it comes back paywalled (no open-access copy), say so
-plainly rather than inferring the content.
+plainly rather than inferring the content. `paper_download` also ingests the
+PDF into PaperMemory.
+
+Before searching the open literature, call
+`mcp__papermemory__papermemory_search` (and `papermemory_recap` when a
+writing project is in play) so you reuse papers and claims already in
+memory. After a new paper is worth citing, ingest it
+(`mcp__papermemory__papermemory_ingest` with `doi` / `arxiv` / `path`) if
+`paper_download` did not already. Cite only keys returned by
+`mcp__papermemory__papermemory_cite` or `mcp__papermemory__papermemory_get`; if cite returns
+nothing, say so — do not invent a title, year, DOI, or bibtex key.
