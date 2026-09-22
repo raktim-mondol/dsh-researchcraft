@@ -61,7 +61,7 @@ Switching to `dsh-tui` / `dsh-web` also clears a *global* agent-presets default 
 2. Click the preset selector at the top of the message box (reads "PTC mode", "Standard mode", or similar by default).
 3. Choose **ResearchCraft** from the list.
 
-The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), academic search (`mcp__parallel__*`, `parallel_search`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`), PaperMemory (`mcp__papermemory__*`), and workspace semantic search (`mcp__zvec_grep__zvec_grep_search`) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, pdf_to_markdown, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset. Native `grep` / `glob` come from the ResearchCraft preset's filesystem-search row.
+The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), academic search (`mcp__parallel__*`, `parallel_search`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`), PaperMemory (`mcp__papermemory__*`), workspace semantic search (`mcp__zvec_grep__zvec_grep_search`), and `paper_mcp` (Paper2Agent stdio mounts) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, pdf_to_markdown, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset. Native `grep` / `glob` come from the ResearchCraft preset's filesystem-search row.
 
 The preset picker remembers your last choice per browser, so you'll typically only need to do this once.
 
@@ -79,6 +79,7 @@ The preset picker remembers your last choice per browser, so you'll typically on
   - a `scientific-figure-making` skill (publication matplotlib house style + helpers for bars/trends/heatmaps) — adapted from [`figures4papers`](https://github.com/ChenLiu-1996/figures4papers)
   - a `diagram-design` skill (39 editorial HTML+SVG diagram types; no Mermaid slop) — vendored from [`diagram-design`](https://github.com/cathrynlavery/diagram-design)
   - a `generating-scientific-hypotheses` skill (literature-grounded hypothesis generation: search-checked novelty, ranked falsifiable cards) — first-party, distilled from Gottweis et al. / Ghareeb et al. 2026 (see [NOTICE](NOTICE))
+  - a `paper2agent` skill (turn a paper and/or its code repo into a reviewed paper skill and a tested FastMCP server) — vendored from [`Paper2Agent`](https://github.com/jmiao24/Paper2Agent) — see [Paper agents](#paper-agents-paper2agent)
 
   `RESEARCHCRAFT_SKILLS_DIR` (or a `~/scientific-agent-skills/skills` checkout) still works as an override if you want a different catalogue instead — available on every preset
 - `notebook` tool — log, read, and export a living lab notebook (JSONL under `<cwd>/.dsh/notebook/`), shared across a subagent delegation tree, with a zip-bundle export alongside the plain Markdown one — every preset
@@ -89,8 +90,9 @@ The preset picker remembers your last choice per browser, so you'll typically on
 - `latex_compile` tool (`.tex` → PDF, bibtex/biber-aware) — every preset
 - `pdf_to_markdown` tool (PDF → Markdown, via [pdf-inspector](https://github.com/firecrawl/pdf-inspector)) for literature-survey conversion of downloaded papers — every preset
 - `modal_run` / `runpod_run` tools for remote GPU/CPU compute offload, plus bundled `modal`/`runpod` skills covering the rest of each CLI (Serverless endpoints, volumes/secrets, Hub templates, …) — see [Remote compute](#remote-compute) — every preset
-- `workflow` tool over a ~330-template research-task catalogue — every preset
+- `research_template` tool over a ~330-template research-task catalogue (not DSH's Rhai `workflow` orchestrator) — every preset
 - Academic search: Parallel, Firecrawl, Scite (MCP connectors), `parallel_search` / `consensus_search` (native REST tools), and `paper_download` (Unpaywall open-access PDF resolver) — **ResearchCraft preset only**
+- `paper_mcp` tool — register a Paper2MCP stdio server from this workspace (`<cwd>/.dsh/paper-mcps.json`) so its tools can appear as `mcp__<serverName>__*` — **ResearchCraft preset only** — see [Paper agents](#paper-agents-paper2agent)
 - [PaperMemory](https://github.com/raktim-mondol/papermemory) local academic memory: `mcp__papermemory__*` (search, ingest, cite, cite-check, recap, remember, claim). First ResearchCraft start uses `papermemory` on PATH or installs the vendored package into `~/.dsh/papermemory`. `paper_download` auto-ingests the saved PDF. Store: `~/.local/share/papermemory/papermemory.db` — **ResearchCraft preset only** — see [Paper memory](#paper-memory)
 - Workspace semantic search via [zvec-grep](https://github.com/zvec-ai/zvec-grep): `mcp__zvec_grep__zvec_grep_search` (local BM25 + vectors). First ResearchCraft start installs the `zg` CLI into `~/.dsh/zvec-grep`. Indexing is **off at session start by default** (Settings → Index at session start); you can index later from chat, and the agent asks first when semantic search would help. While indexing, a progress bar with estimated time and Cancel is shown (no timeout) — exact lookup stays on native `grep` / `glob` — **ResearchCraft preset only** — see [Workspace search](#workspace-search)
 - Bundled `agent-browser` skill for interactive web browsing (navigate, log in, fill forms, download datasets), with screenshots delegated to `subagent_vision` — see [Browsing the web](#browsing-the-web) — every preset
@@ -189,6 +191,14 @@ The SQLite store is PaperMemory's default: `~/.local/share/papermemory/papermemo
 | `mcp__papermemory__papermemory_lesson` | Save a durable academic writing/reading rule |
 
 `paper_download` calls ingest on the saved PDF (and DOI metadata when a DOI was given). The agent is steered to `recap` on paper-writing tasks, to cite only memory hits, and to `cite_check` before treating a section as finished. Load the bundled `papermemory` skill (`skills/papermemory`) for the full workflow.
+
+## Paper agents (Paper2Agent)
+
+The bundled `paper2agent` skill ([jmiao24/Paper2Agent](https://github.com/jmiao24/Paper2Agent), MIT) turns a paper and/or its code repository into (1) a reviewed, compact paper skill and (2) a tested FastMCP server of that paper's methods. Load it with the `skill` tool when the user asks to agentify a paper. It is not a replacement for `pdf_to_markdown` (fast unreviewed extract) or for catalogue skills such as `scanpy` (how-to).
+
+A full repository conversion is long (many `subagent` specialists plus independent verifiers). The agent should confirm scope first. After a verified ZIP, connect the server **only when asked**, with native `paper_mcp` (`register` / `status` / `unregister`) on the ResearchCraft preset. That writes `<cwd>/.dsh/paper-mcps.json` (interpreter, server script, env **names** — never secrets) and tries to mount the server over stdio so tools appear as `mcp__<serverName>__*`. Those mounts are standing for the life of `dsh`, same as Parallel/Scite: if tools do not appear, restart `dsh`. A different workspace that reuses the same `serverName` also needs a restart.
+
+Do not run `claude mcp add`. GPU papers use `runpod_run` / `modal_run` rather than a silent CPU fallback.
 
 | Setting / env | What it does |
 |---|---|
@@ -302,7 +312,7 @@ A subagent the top-level agent delegates to runs in its own DSH session, but its
 
 ## Workflow templates
 
-`workflow` browses (`action: "list"`, filterable by `category`/`query`) and retrieves (`action: "get"`, with `values` filling `{placeholder}` tokens) a catalogue of ~330 one-click research-task prompt templates across 22 disciplines, ported from ResearchCraft's own template library.
+`research_template` browses (`action: "list"`, filterable by `category`/`query`) and retrieves (`action: "get"`, with `values` filling `{placeholder}` tokens) a catalogue of ~330 one-click research-task prompt templates across 22 disciplines, ported from ResearchCraft's own template library. It is a different tool from DSH's `workflow` (Rhai multi-agent scripts); the ResearchCraft preset mounts both, so they cannot share a name.
 
 ## Development
 

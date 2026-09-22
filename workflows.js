@@ -23,20 +23,62 @@ function summary(w) {
 }
 
 /** Fill `{key}` tokens in a workflow prompt from a values map; unfilled tokens stay literal. */
-function fillPrompt(prompt, values = {}) {
+export function fillPrompt(prompt, values = {}) {
   return prompt.replace(/\{(\w+)\}/g, (match, key) => {
     const v = values[key]
     return typeof v === 'string' && v.trim() ? v.trim() : match
   })
 }
 
-/** Register the ResearchCraft workflow-template catalogue tool. */
+/** Catalogue lookup used by the `research_template` tool. Exported for tests. */
+export function queryResearchTemplates(args = {}) {
+  const all = loadWorkflows()
+  const action = args.action ?? 'list'
+
+  if (action === 'get') {
+    const id = typeof args.id === 'string' ? args.id.trim() : ''
+    if (!id) return { error: 'action=get requires id' }
+    const w = all.find((x) => x.id === id)
+    if (!w) return { error: `unknown workflow id "${id}". Use action=list to browse.` }
+    const missing = (w.placeholders ?? [])
+      .filter((p) => p.required && !(args.values && typeof args.values[p.key] === 'string' && args.values[p.key].trim()))
+      .map((p) => p.key)
+    return {
+      id: w.id,
+      name: w.name,
+      category: w.category,
+      requiresFiles: Boolean(w.requiresFiles),
+      suggestedSkills: w.suggestedSkills ?? [],
+      prompt: fillPrompt(w.prompt, args.values),
+      ...(missing.length ? { missing_required_values: missing } : {}),
+    }
+  }
+
+  let list = all
+  if (args.category) list = list.filter((w) => w.category === args.category)
+  if (args.query) {
+    const q = args.query.toLowerCase()
+    list = list.filter((w) => w.name.toLowerCase().includes(q) || w.description.toLowerCase().includes(q))
+  }
+  return { workflows: list.map(summary) }
+}
+
+/**
+ * Register the ResearchCraft task-template catalogue.
+ *
+ * Named `research_template`, not `workflow`: the ResearchCraft preset also
+ * mounts DSH's Rhai `workflow` tool (`@deepseek-ai/dsh-tool-workflow`), and
+ * scoped tools shadow globals — a same-name register here was invisible to
+ * the agent (verified: `workflow action=get id=agentify-paper` ran a Rhai
+ * script instead of this catalogue).
+ */
 export function applyWorkflows(ctx) {
   ctx.tools.register(defineTool({
-    name: 'workflow',
+    name: 'research_template',
     description: [
       'Browse and use ResearchCraft\'s catalogue of ~330 one-click research task templates across 22 disciplines',
       '(paper, literature, genomics, chemistry, clinical, ml, statistics, grants, and more).',
+      'Not the DSH Rhai `workflow` orchestrator — this is prompt templates only.',
       'Use action "list" (default) to browse by category and/or search text — returns compact summaries, not full prompts.',
       'Use action "get" with an id to retrieve one template\'s full prompt, filling any {placeholder} tokens from "values".',
       'A template is a starting point, not a substitute for your own judgment — adapt it to the actual request.',
@@ -67,35 +109,7 @@ export function applyWorkflows(ctx) {
       },
     },
     async execute(args) {
-      const all = loadWorkflows()
-      const action = args.action ?? 'list'
-
-      if (action === 'get') {
-        const id = typeof args.id === 'string' ? args.id.trim() : ''
-        if (!id) return { error: 'action=get requires id' }
-        const w = all.find((x) => x.id === id)
-        if (!w) return { error: `unknown workflow id "${id}". Use action=list to browse.` }
-        const missing = (w.placeholders ?? [])
-          .filter((p) => p.required && !(args.values && typeof args.values[p.key] === 'string' && args.values[p.key].trim()))
-          .map((p) => p.key)
-        return {
-          id: w.id,
-          name: w.name,
-          category: w.category,
-          requiresFiles: Boolean(w.requiresFiles),
-          suggestedSkills: w.suggestedSkills ?? [],
-          prompt: fillPrompt(w.prompt, args.values),
-          ...(missing.length ? { missing_required_values: missing } : {}),
-        }
-      }
-
-      let list = all
-      if (args.category) list = list.filter((w) => w.category === args.category)
-      if (args.query) {
-        const q = args.query.toLowerCase()
-        list = list.filter((w) => w.name.toLowerCase().includes(q) || w.description.toLowerCase().includes(q))
-      }
-      return { workflows: list.map(summary) }
+      return queryResearchTemplates(args)
     },
   }))
 }

@@ -15,6 +15,8 @@ When the ask is to generate, critique, rank, or plan tests for scientific hypoth
 
 For a task too large for one unstructured pass — a full analysis pipeline, a multi-part investigation, a non-trivial research-engineering build — load \`agentic-data-science-pipeline\` for a plan/review/implement/verify/reflect loop built on \`subagent\`/\`todo\`/\`notebook\` instead of one long improvised attempt. For automated hyperparameter search on a deep learning or LLM model specifically, load \`hyperparameter-optimization\` before designing the sweep — it folds the pre-registration/verification discipline above into that specific task.
 
+When the user asks to agentify a paper, convert a methods paper plus its code repository into tested MCP tools, or build a reusable paper skill from PDFs/supplements, load \`paper2agent\` (router). For a repo-only conversion load \`paper2mcp\`; for PDFs-only load \`paper2skill\`; for questions about the Paper2Agent Nature paper load \`paper2agent-paper\`. That is not \`pdf_to_markdown\` (a fast unreviewed extract) and not a catalogue skill such as \`scanpy\` (how-to). Follow the skill: \`paper_download\` for a DOI, Paper2Skill for a reviewed reading package, Paper2MCP for a verified FastMCP ZIP. Launch specialists with \`subagent\` (continuable — collect them; record \`subagentId\` as the workflow \`agent_id\`); independent verifiers are a **new** spawn, never \`subagent_fork\`. GPU papers use \`runpod_run\`/\`modal_run\`. Connect a generated server only when asked, via \`paper_mcp\` \`register\` — never \`claude mcp add\`. Confirm scope first; a full conversion is long. Report partial or blocked work; never invent a tool the repo cannot support.
+
 ## Python
 
 Always run Python through uv in this workspace:
@@ -42,7 +44,7 @@ Once you have a concrete finding to report — not a work-in-progress note — c
 For focused review or research, call \`subagent\` (or \`subagent_fork\` when shared history helps). Put the specialist name in \`description\` and include its brief in \`prompt\` with the concrete task.
 
 Code & computation: code-reviewer, statistical-reviewer, math-checker, ml-auditor, data-validator, reproducibility-auditor, pipeline-engineer, data-visualizer, simulation-reviewer.
-Literature & verification: literature-researcher, citation-checker, fact-checker, methodology-reviewer, peer-reviewer.
+Literature & verification: literature-researcher, citation-checker, fact-checker, methodology-reviewer, peer-reviewer, paper-agent-builder.
 Design: hypothesis-generator, experiment-designer, protocol-writer, results-interpreter.
 Writing: manuscript-editor, abstract-writer, ethics-reviewer.
 
@@ -93,7 +95,7 @@ When a task needs a real rendered browser rather than a text fetch — exploring
 
 When a claim really needs the full paper rather than an abstract or search snippet — verifying a specific number, method detail, or figure a search result only summarizes — call \`paper_download\` with the DOI (needs UNPAYWALL_EMAIL) or a direct PDF URL to pull it into the workspace, rather than reasoning from the snippet alone. It resolves the DOI to an open-access copy via Unpaywall and returns a clear "paywalled, no open-access copy" result (not an error) when there isn't one — tell the user that rather than fabricating what the paper says. A successful download is also ingested into PaperMemory (see below).
 
-Once a paper is downloaded as a PDF (via \`paper_download\` or otherwise), call \`pdf_to_markdown\` to get readable text out of it instead of reading the PDF as raw bytes or eyeballing it visually — it classifies text-based vs. scanned and extracts headings, tables, and reading order locally in milliseconds. In a literature survey converting many papers, pass \`write_to\` so each conversion lands as its own file in the workspace (e.g. \`literature/<author>-<year>.md\`) rather than dumping the full text of every paper inline. If a PDF comes back scanned/image-based (or \`pages_needing_ocr\` is non-empty) and OCR isn't set up locally, render just those pages with \`pdftoppm\` and delegate to \`subagent_vision\` instead of guessing at the content.
+Once a paper is downloaded as a PDF (via \`paper_download\` or otherwise), call \`pdf_to_markdown\` to get readable text out of it instead of reading the PDF as raw bytes or eyeballing it visually — it classifies text-based vs. scanned and extracts headings, tables, and reading order locally in milliseconds. In a literature survey converting many papers, pass \`write_to\` so each conversion lands as its own file in the workspace (e.g. \`literature/<author>-<year>.md\`) rather than dumping the full text of every paper inline. If a PDF comes back scanned/image-based (or \`pages_needing_ocr\` is non-empty) and OCR isn't set up locally, render just those pages with \`pdftoppm\` and delegate to \`subagent_vision\` instead of guessing at the content. To turn that PDF into a reusable, reviewed paper *skill* (figures, table CSVs, \`verify --strict\`), load \`paper2agent\` / Paper2Skill instead of treating the markdown extract as the deliverable.
 
 ## Paper memory
 
@@ -150,7 +152,7 @@ Before a semantic search, if you are not sure an index exists, call \`zvec_index
 
 ## Workflow templates
 
-When the user's ask matches a common research task, check the \`workflow\` tool (list, optionally by category, before get) for a ready-made prompt template instead of starting from scratch — then adapt it to the specifics rather than following it blindly.
+When the user's ask matches a common research task, check the \`research_template\` tool (list, optionally by category, before get) for a ready-made prompt template instead of starting from scratch — then adapt it to the specifics rather than following it blindly. Do not use DSH's \`workflow\` tool for that: \`workflow\` runs Rhai orchestration scripts; the ~330 research-task templates are \`research_template\`.
 
 ## Files
 

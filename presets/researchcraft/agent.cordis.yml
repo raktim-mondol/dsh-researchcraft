@@ -338,6 +338,14 @@
 - id: paper-download
   name: dsh-researchcraft/paper-download
 
+# Paper2MCP stdio servers registered in this workspace
+# (`<cwd>/.dsh/paper-mcps.json`). Native `paper_mcp` (status/register/
+# unregister) plus best-effort `mcp__<serverName>__*` mounts on session
+# create. Standing process-lifetime, same restart caveat as the connectors
+# above. See paper-mcp.js. No realm.
+- id: paper-mcp
+  name: dsh-researchcraft/paper-mcp
+
 # PaperMemory local academic memory (stdio MCP via `papermemory mcp`).
 # Surfaces as `mcp__papermemory__*` (search, ingest, cite, cite-check, recap,
 # remember, claim, lesson, get) when the CLI is on PATH or the plugin-managed

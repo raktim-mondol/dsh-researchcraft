@@ -6,3 +6,4 @@ package-lock.json
 __pycache__/
 *.py[cod]
 *.egg-info/
+/paper2agent/

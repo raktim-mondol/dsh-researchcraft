@@ -14,6 +14,40 @@
     "requiresFiles": true
   },
   {
+    "id": "agentify-paper",
+    "name": "Agentify a Paper",
+    "description": "Convert a paper and/or its code repository into a reviewed paper skill and tested MCP tools",
+    "category": "paper",
+    "icon": "Bot",
+    "prompt": "Load the paper2agent skill and follow it. Agentify this work into a reviewed paper skill and/or a tested FastMCP server of the paper's methods. Paper and associated files: {paper}. Code repository (if any): {repo}. Optional focus (tasks, tutorial title, or source URL): {focus}. Output directory: {output}. Ask via ask_user_question for any missing required input; do not invent a URL or path. Use paper_download for a DOI, then Paper2Skill — pdf_to_markdown is only a preview, never the delivered paper skill. For a repository, follow Paper2MCP: isolated uv env, continuable subagent specialists, independent verifier spawns (never subagent_fork), verify_workflow.py gates. GPU-required tutorials use runpod_run or modal_run; do not silently fall back to CPU. Log stages in the notebook. Report partial or blocked work honestly; never invent a tool the repo cannot support. Connect the generated MCP with paper_mcp register only if asked. Lead with delivery paths, verification results, and limitations. This prompt came from research_template id=agentify-paper, not the DSH Rhai workflow tool.",
+    "suggestedSkills": [
+      "paper2agent"
+    ],
+    "placeholders": [
+      {
+        "key": "paper",
+        "label": "Paper URL, DOI, or local PDF/files",
+        "required": false
+      },
+      {
+        "key": "repo",
+        "label": "Code repository URL or local path",
+        "required": false
+      },
+      {
+        "key": "focus",
+        "label": "Optional task, tutorial title, or source URL filter",
+        "required": false
+      },
+      {
+        "key": "output",
+        "label": "Output project directory",
+        "required": false
+      }
+    ],
+    "requiresFiles": false
+  },
+  {
     "id": "write-paper",
     "name": "Write a Paper",
     "description": "Draft a full manuscript from uploaded data or results",

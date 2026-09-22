@@ -106,6 +106,20 @@ added at the top of `SKILL.md` (paper-first PNG/SVG export, skip website
 brand onboarding unless asked, `uv run python`); the rest of the skill is
 unmodified.
 
+The `paper2agent` skill (`skills/paper2agent`) is vendored from the
+open-source `jmiao24/Paper2Agent` project (MIT License) —
+https://github.com/jmiao24/Paper2Agent, commit
+`8c2d059165ef8cdcb70dbea76655b9c2b55b38e6`. The skill tree (`paper2agent` router plus sibling `paper2skill`,
+`paper2mcp`, and `paper2agent-paper` catalog skills, and Python helpers)
+is copied; a ResearchCraft mapping was added at the top of the three
+component `SKILL.md` files and to `paper2mcp/references/orchestration.md` and
+`output-delivery.md` (DSH `subagent`/`subagentId`, `uv`, `paper_download`,
+`paper_mcp`, no `claude mcp add`). Components are top-level skills because
+DSH's skill catalog is one directory deep (nested `paper2mcp` was
+`skill`-unknown). Codex UI metadata (`paper2mcp/agents/openai.yaml`) and
+the Claude-only `scripts/connect_remote_mcp.sh` were not copied. Python
+verification helpers are unmodified.
+
 PaperMemory (`vendor/papermemory/` plus `skills/papermemory/SKILL.md`) is
 vendored from the open-source `raktim-mondol/papermemory` project (MIT
 License) — https://github.com/raktim-mondol/papermemory. The Python package
