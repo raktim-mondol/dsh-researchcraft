@@ -10,7 +10,7 @@ ResearchCraft as a **DeepSeek Harness** profile: the DSH web UI and DSH agent, w
    npm install -g @deepseek-ai/dsh
    ```
 
-   or run without a global install: `npx @deepseek-ai/dsh web`. You need a working `dsh` CLI before the next step.
+   ResearchCraft 0.12+ targets DeepSeek Harness **0.2.0** (`dsh --version` should report `0.2.0` or later). You can also run without a global install: `npx @deepseek-ai/dsh web`. You need a working `dsh` CLI before the next step.
 
 2. Then add this plugin:
 
@@ -53,21 +53,13 @@ ss -ltnp | grep 3080
 zg server off
 ```
 
-Switching to `dsh-tui` / `dsh-web` also clears a *global* agent-presets default of `researchcraft` if one was saved. That default lives in `~/.dsh/settings.yaml` and is shared across profiles — dsh-tui does not ship `dsh-researchcraft/*` plugins, so booting with that default crashes the agent. The ResearchCraft profile still defaults to the ResearchCraft preset from its own patch.
+The ResearchCraft profile's bundle patch sets `agent-preset-registry` `default: researchcraft` and inserts a `preset-researchcraft` declaration (DSH 0.2.0 no longer reads `$DSH_HOME/.agent-presets/`). New chats on this profile start on **ResearchCraft**. Confirm the preset selector at the top of the message box reads "ResearchCraft"; if it still says Standard/PTC, the profile patch did not apply.
 
-**Select the ResearchCraft agent preset for each chat.** Installing this plugin adds a *ResearchCraft* option to the agent-preset picker — it does not replace whatever your default preset already is (commonly "Standard mode" / "PTC mode"). A new chat starts on that default, not on ResearchCraft, until you pick it explicitly:
-
-1. Start a new session.
-2. Click the preset selector at the top of the message box (reads "PTC mode", "Standard mode", or similar by default).
-3. Choose **ResearchCraft** from the list.
-
-The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), academic search (`mcp__parallel__*`, `parallel_search`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`), PaperMemory (`mcp__papermemory__*`), workspace semantic search (`mcp__zvec_grep__zvec_grep_search`), and `paper_mcp` (Paper2Agent stdio mounts) are only present on this preset — a session left on the default one won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, pdf_to_markdown, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset. Native `grep` / `glob` come from the ResearchCraft preset's filesystem-search row.
-
-The preset picker remembers your last choice per browser, so you'll typically only need to do this once.
+The persona, the longer research system prompt (notebook discipline, specialist roster, connector guidance, …), academic search (`mcp__parallel__*`, `parallel_search`, `mcp__firecrawl__*`, `mcp__scite__*`, `consensus_search`), PaperMemory (`mcp__papermemory__*`), workspace semantic search (`mcp__zvec_grep__zvec_grep_search`), and `paper_mcp` (Paper2Agent stdio mounts) are only present on this preset — a session left on Standard/PTC won't have them, and asking it to use e.g. the Parallel connector will fail with `tools[name] is not a function`. The general-purpose tools below (notebook, image_generate, sci_inspect, latex_compile, pdf_to_markdown, modal_run/runpod_run, workflow) are available on every preset regardless, since they're registered at the plugin/bundle level rather than inside the ResearchCraft preset. Native `grep` / `glob` come from the ResearchCraft preset's filesystem-search row.
 
 ## What it adds
 
-- **ResearchCraft agent preset** — persona, research system prompt (notebook discipline, specialist roster, connector guidance), standard coding tools, and the academic search connectors below. Select it explicitly per chat — see [Run](#run).
+- **ResearchCraft agent preset** — persona, research system prompt (notebook discipline, specialist roster, connector guidance), standard coding tools, and the academic search connectors below. This profile defaults to it — see [Run](#run).
 - Scientific skills catalogue vendored into `skills/` from open-source catalogues, bundled with the plugin like the specialist briefs below — no separate checkout or setup needed (see [NOTICE](NOTICE) for exactly what was changed vs. each source):
   - 140 domain skills (chemistry, genomics/bioinformatics, imaging, stats, ML, writing, …) — [`scientific-agent-skills`](https://github.com/K-Dense-AI/scientific-agent-skills)
   - 16 research-discipline/methodology skills (question framing, pre-registration, verification-before-claiming, red-team review, …) — [`science-superpowers`](https://github.com/K-Dense-AI/science-superpowers)

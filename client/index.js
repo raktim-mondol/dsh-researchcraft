@@ -1,27 +1,26 @@
 /**
  * dsh-researchcraft client plugin: Settings page for ResearchCraft API keys
  * plus zvec-grep index progress (header chip + tool card). Uses
- * `ctx.settingsScope` (not `ctx.remote.credentials`) — the dedicated
- * secret-credential wire seam does not resolve from this third-party client
- * plugin in this harness version.
+ * `ctx.configForms` (DSH 0.2.0; the 0.1.x `settingsScope` seam is gone).
+ * Host keys live on the `researchcraft` Loader entry Config.
  */
 import { ApiKeysSection } from './ApiKeysSection.jsx'
 import { ZvecIndexHeaderAction, ZvecIndexToolView } from './ZvecIndexProgress.jsx'
 
-const NAMESPACE = 'dsh-researchcraft-keys'
+const ENTRY_ID = 'researchcraft'
 
-export const inject = ['slots', 'settingsScope']
+export const inject = ['slots', 'configForms']
 
 export function apply(ctx) {
-  const scope = ctx.settingsScope.bind({ namespace: NAMESPACE })
+  const scope = ctx.configForms.get(ENTRY_ID)
 
-  ctx.slots.inject('settings.section', () => ctx.slots.register({
+  ctx.effect(() => ctx.configForms.whileServed([ENTRY_ID], () => ctx.slots.inject('settings.section', () => ctx.slots.register({
     name: 'settings.section',
     id: 'researchcraft-api-keys',
     order: 60,
     label: () => 'ResearchCraft API keys',
     inject: () => ({ scope }),
-  }, ApiKeysSection))
+  }, ApiKeysSection))))
 
   ctx.slots.inject('conversation.session.header.actions', () => ctx.slots.register({
     name: 'conversation.session.header.actions',

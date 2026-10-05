@@ -8,20 +8,22 @@ import { applyRunpodRun } from './runpod-run.js'
 import { applyWorkflows } from './workflows.js'
 import { applyScientificResult } from './scientific-result.js'
 import { seed } from './seed.js'
-import { registerKeysSettings } from './settings-keys.js'
+import { KeysSettingsSchema, registerKeysSettings } from './settings-keys.js'
 
 export const name = 'dsh-researchcraft'
 export const inject = ['tools', 'settings']
+export const Config = KeysSettingsSchema
 
 // The ResearchCraft persona and system-prompt guidance are NOT registered
-// here: they live in prompt-section.js, mounted as a row inside
-// presets/researchcraft/agent.cordis.yml so they apply only to sessions on
-// the ResearchCraft preset. This apply() runs at the bundle (host) level —
+// here: they live in prompt-section.js, mounted as a row inside the
+// ResearchCraft preset (cordis.patch.yml `preset-researchcraft`, plugins
+// sourced from presets/researchcraft/agent.cordis.yml) so they apply only
+// to sessions on that preset. This apply() runs at the bundle (host) level —
 // every session on every preset — so it carries only the tools and settings
 // that are meant to be available everywhere.
-export function apply(ctx) {
+export function apply(ctx, config) {
   seed()
-  registerKeysSettings(ctx)
+  registerKeysSettings(ctx, config)
   applyNotebook(ctx)
   applyImageGenerate(ctx)
   applySciInspect(ctx)

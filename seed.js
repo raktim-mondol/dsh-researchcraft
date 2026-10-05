@@ -26,21 +26,13 @@ function copyMissing(src, dest) {
 }
 
 /**
- * Install the ResearchCraft agent preset and first-party skills into DSH home.
- * Scientific catalogue skills stay on disk (scientific-agent-skills or a
- * fallback checkout) and are wired through the preset's skill-filesystem row.
+ * Install first-party skills into DSH home. The ResearchCraft agent preset is
+ * a `@deepseek-ai/dsh-agent-preset` declaration in `cordis.patch.yml` (DSH
+ * 0.2.0+); `$DSH_HOME/.agent-presets/` is not read. Scientific catalogue
+ * skills stay on disk (scientific-agent-skills or a fallback checkout) and
+ * are wired through the preset's skill-filesystem row.
  */
 export function seed() {
   const home = dshHome()
-  const presetDest = join(home, '.agent-presets', 'researchcraft')
-  const presetSrc = join(here, 'presets', 'researchcraft')
-  mkdirSync(dirname(presetDest), { recursive: true })
-  if (!existsSync(join(presetDest, 'agent.cordis.yml'))) {
-    cpSync(presetSrc, presetDest, { recursive: true })
-  } else {
-    // Keep composition current when the plugin is updated.
-    cpSync(presetSrc, presetDest, { recursive: true })
-  }
-
   copyMissing(join(here, 'skills'), join(home, 'skills'))
 }

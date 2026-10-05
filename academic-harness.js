@@ -577,6 +577,7 @@ export async function apply(ctx) {
         type: 'array',
         items: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             id: { type: 'string', required: true },
             text: { type: 'string', required: true },
@@ -647,6 +648,7 @@ export async function apply(ctx) {
         type: 'array',
         items: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             file: { type: 'string', required: true },
             purpose: { type: 'string' },
@@ -658,6 +660,7 @@ export async function apply(ctx) {
         type: 'array',
         items: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             id: { type: 'string', required: true },
             text: { type: 'string' },

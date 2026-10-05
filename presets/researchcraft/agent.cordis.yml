@@ -12,8 +12,8 @@
 # A service row here MUST sit inside a group carrying an `isolate` realm.
 # Without one it publishes into the root realm, where it is process-global —
 # another preset publishing the same name collides, and a host reader would
-# resolve one preset's instance for every session; `dsh-agent-presets` rejects
-# that at mount. `true` means an entry-local realm: this standing mount's own
+# resolve one preset's instance for every session; `dsh-agent-preset-registry`
+# rejects that at mount. `true` means an entry-local realm: this standing mount's own
 # private instance, apart from every other preset's. (A shared label does NOT
 # pool instances — `provide()` throws on the second registration under the
 # same realm symbol; labels join REALMS, and are not what this file needs.)
@@ -227,12 +227,11 @@
     # for the `inject` declaration a `ctx.plugin()`-mounted child like this
     # one needs.
     #
-    # `agentOptions.model` is forwarded by `@deepseek-ai/dsh-tool-subagent`
-    # 0.1.1-rc.2 (the npm `latest` line, same as `npm install -g @deepseek-ai/dsh`).
-    # Do not bump that dependency to 0.1.2-alpha.2 while the CLI is still on
-    # 0.1.1-rc.2: alpha.2 tool-subagent refuses to mount unless spawn advertises
-    # an `agentOptions` capability, so `subagent_pro`/`subagent_vision` vanish
-    # as "unknown tool" while the rest of the preset still looks healthy.
+    # `agentOptions.model` is forwarded by `@deepseek-ai/dsh-tool-subagent`.
+    # Pin that dependency to the same line as `npm install -g @deepseek-ai/dsh`
+    # (`latest`). Spawn-in-process on 0.2.0 advertises `agentOptions`; a
+    # mismatched older spawn provider throws at mount and drops
+    # `subagent_pro`/`subagent_vision` as "unknown tool".
     - id: subagent-models
       name: dsh-researchcraft/subagent-models
 
@@ -258,8 +257,8 @@
         backgroundMode: one-shot
         maxDepth: provider-managed
 
-    - id: workflow-worker-thread
-      name: '@deepseek-ai/dsh-workflow-worker-thread'
+    - id: workflow-ptc
+      name: '@deepseek-ai/dsh-workflow-ptc'
       config:
         provider: spawn
 

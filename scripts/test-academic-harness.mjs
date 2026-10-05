@@ -157,6 +157,10 @@ for (const s of skills) {
 const yml = readFileSync(join(ROOT, 'presets/researchcraft/agent.cordis.yml'), 'utf8')
 ok('preset mounts academic-harness', /name: dsh-researchcraft\/academic-harness/.test(yml))
 ok('preset mounts hooks', /name: dsh-researchcraft\/academic-harness-hooks/.test(yml))
+const patch = readFileSync(join(ROOT, 'cordis.patch.yml'), 'utf8')
+ok('patch inlines academic-harness', /name: dsh-researchcraft\/academic-harness/.test(patch))
+ok('patch inlines hooks', /name: dsh-researchcraft\/academic-harness-hooks/.test(patch))
+ok('preset uses workflow-ptc', /name: '@deepseek-ai\/dsh-workflow-ptc'/.test(yml))
 
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
 ok('package export academic-harness', pkg.exports['./academic-harness'] === './academic-harness.js')

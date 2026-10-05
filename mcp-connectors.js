@@ -5,7 +5,7 @@
  * (Settings -> ResearchCraft API keys) as well as the matching env var.
  * Resolved once when the `researchcraft` preset first mounts. That mount is
  * a STANDING composition shared by every session naming the preset for the
- * life of the running `dsh` process (see @deepseek-ai/dsh-agent-presets) —
+ * life of the running `dsh` process (see @deepseek-ai/dsh-agent-preset) —
  * a new chat session does NOT get a fresh mount, so a key entered or
  * changed in Settings only reaches these connectors after `dsh` itself is
  * stopped and restarted, not merely after starting a new session (verified

@@ -1,6 +1,7 @@
 /**
  * Registers RESEARCHCRAFT_PROMPT as a system-prompt section, mounted as a row
- * inside `presets/researchcraft/agent.cordis.yml` rather than called from
+ * inside the ResearchCraft preset (`cordis.patch.yml` preset-researchcraft,
+ * plugins sourced from `presets/researchcraft/agent.cordis.yml`) rather than called from
  * `index.js`'s host-level `apply()`. `ctx.systemPrompt.section()` scopes to
  * whatever context registers it (the same scope-only mechanism
  * `@deepseek-ai/dsh-persona` relies on) — called from a preset row, the
