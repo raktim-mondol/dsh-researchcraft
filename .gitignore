@@ -7,3 +7,5 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 /paper2agent/
+vendor/academic-harness/.venv/
+vendor/academic-harness/installed-version

@@ -1,0 +1,14 @@
+description: Response to reviewers. Every item is answered, every change claimed is a real diff (REV-01), and the tone has no defensive phrasing.
+defaults:
+  data_policy: restricted
+  levels: {REV-02: major, REV-03: minor}
+rules:
+  - {id: answered, kind: reviews_closed}
+  - id: tone
+    kind: patterns
+    in: reviews
+    level: minor
+    lexicon:
+      - {re: "\\b(obviously|clearly wrong|ridiculous|absurd|trivial(ly)?)\\b", why: "dismissive wording"}
+      - {re: "\\bthe reviewer (misunderst(and|ands|ood)|misread|misreads|failed|fails|did not read|didn't read|is wrong|is mistaken)", why: "blames the reviewer"}
+      - {re: "\\bas (we )?(already )?(said|stated|explained) (before|above|previously)\\b", why: "points back instead of answering"}

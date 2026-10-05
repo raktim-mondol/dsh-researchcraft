@@ -1,0 +1,28 @@
+description: Empirical journal paper (IMRaD). Every outcome sought in Methods is reported in Results; limitations are stated.
+params:
+  abstract_words: 250
+  methods_glob: "*method*"
+  results_glob: "*result*"
+  guideline_items: profile/guideline_items.yaml   # your reporting guideline (STROBE, CONSORT, STARD ...), one {id, topic, text} per item
+sections: [Introduction, Methods, Results, Discussion]
+scaffold:
+  src/sections/04_discussion/index.tex: |
+    \section{Discussion}
+    \label{sec:discussion}
+
+    Write the first paragraph here.
+
+    \subsection{Limitations}
+    \label{sec:limitations}
+
+    State the principal limits of the study.
+  profile/outcomes.yaml: |
+    # Each outcome named in Methods must have a unit in Methods and a unit in Results.
+    items: []   # - {id: primary_accuracy, units: [methods.p002, results.p001]}
+  profile/guideline_map.yaml: |
+    items: {}
+rules:
+  - {id: sections, kind: sections, required: [Introduction, "Methods|Materials and methods", Results, Discussion, "Limitations|Limitation"]}
+  - {id: outcomes, kind: coverage, file: profile/outcomes.yaml, label: outcome, groups: [["${methods_glob}"], ["${results_glob}"]]}
+  - {id: guideline, kind: checklist, optional: true, items: "${guideline_items}", map: profile/guideline_map.yaml}
+  - {id: abstract_length, kind: limit, label: abstract, files: ["*abstract*"], max_words: "${abstract_words}"}

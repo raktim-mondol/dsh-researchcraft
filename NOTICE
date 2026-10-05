@@ -120,6 +120,17 @@ DSH's skill catalog is one directory deep (nested `paper2mcp` was
 the Claude-only `scripts/connect_remote_mcp.sh` were not copied. Python
 verification helpers are unmodified.
 
+Academic Harness (`vendor/academic-harness/` plus `skills/academic-harness/`
+and `skills/ah-*`) is the Python engine from
+`raktim-mondol/academic-harness` (commit
+`dbc7414662c776b55e9da87c798d1ad08bf1c941`), vendored without the Pi
+adapter, Claude Code adapter, examples, phase reports, or tests. ResearchCraft
+drives that engine through native DeepSeek Harness tools and interceptors
+(`academic-harness.js`, `academic-harness-hooks.js`). The optional T3
+verifier backend that can shell out to a `pi` binary is unused unless a
+project sets `verifier.backend: pi`. Skills were rewritten for DSH tool
+names; the engine Python is unmodified.
+
 PaperMemory (`vendor/papermemory/` plus `skills/papermemory/SKILL.md`) is
 vendored from the open-source `raktim-mondol/papermemory` project (MIT
 License) — https://github.com/raktim-mondol/papermemory. The Python package

@@ -1,0 +1,25 @@
+description: Conference paper. Length limit, double-blind lint, every contribution backed by an experiment unit.
+params:
+  max_words: 6000          # set from the venue's page limit
+  anonymous: true          # false for the camera-ready version
+  results_glob: ["*experiment*", "*evaluation*", "*result*"]
+sections: [Introduction, Related Work, Method, Experiments, Conclusion]
+scaffold:
+  profile/contributions.yaml: |
+    # Each contribution claimed in the introduction must have a unit in the experiments.
+    items: []   # - {id: c1, units: [intro.p003, experiments.p002]}
+rules:
+  - {id: sections, kind: sections, required: [Introduction, "Related Work|Background", "Method|Approach|Methods", "Experiments|Evaluation|Results", "Conclusion|Conclusions"]}
+  - {id: length, kind: limit, label: body, max_words: "${max_words}", exclude: ["*appendi*", "*supplement*"]}
+  - id: anonymity
+    kind: patterns
+    when: {param: anonymous}
+    files: ["*"]
+    level: major
+    lexicon:
+      - {re: "\\b(our|my) (previous|prior|earlier|recent) (work|paper|study|studies|system)", why: "self-identifying phrasing"}
+      - {re: "\\bwe (previously|earlier|recently) (showed|proposed|introduced|developed|reported)", why: "self-identifying phrasing"}
+      - {re: "github\\.com/[\\w.-]+", why: "repository URL may identify the authors"}
+      - {re: "\\backnowledg(e)?ments?\\b", why: "acknowledgements are removed from a blind submission"}
+      - {re: "\\bour (lab|laboratory|group|institution|university)\\b", why: "names the authors' institution"}
+  - {id: contributions, kind: coverage, file: profile/contributions.yaml, label: contribution, groups: ["${results_glob}"]}

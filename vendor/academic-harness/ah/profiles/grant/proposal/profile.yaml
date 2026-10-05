@@ -1,0 +1,46 @@
+description: Grant proposal. Aims, work packages, deliverables, milestones and budget form one record graph that must be consistent; funder criteria are covered.
+defaults:
+  data_policy: restricted
+params:
+  max_words: 6000
+sections: [Aims, Significance, Innovation, Approach, Timeline, Budget]
+scaffold_facts:
+  - {id: budget_total, kind: value, value: 0, note: "the total budget as written in the narrative; must equal the budget lines"}
+scaffold:
+  profile/grant.yaml: |
+    # The author owns this file (agents cannot write it). Months are counted from the project start.
+    project: {months: 36, total_budget: 0, person_months: 0}
+    aims: []                # - {id: A1, title: ...}
+    work_packages: []       # - {id: WP1, aim: A1, start: 1, end: 12, person_months: 6}
+    deliverables: []        # - {id: D1, wp: WP1, month: 12, milestone: M1}
+    milestones: []          # - {id: M1, wp: WP1, month: 12}
+    budget_lines: []        # - {id: B1, category: staff, amount: 0, person_months: 0}
+  profile/criteria.yaml: |
+    # One entry per funder criterion, with the units that address it.
+    items: []               # - {id: significance, units: [significance.p001]}
+rules:
+  - {id: sections, kind: sections, required: ["Aims|Specific Aims", Significance, Innovation, Approach, "Timeline|Work Plan", Budget]}
+  - id: graph
+    kind: records
+    file: profile/grant.yaml
+    checks:
+      - {type: min_rows, table: aims}
+      - {type: min_rows, table: work_packages}
+      - {type: min_rows, table: deliverables}
+      - {type: min_rows, table: budget_lines}
+      - {type: ref, table: work_packages, field: aim, to: aims}
+      - {type: ref, table: deliverables, field: wp, to: work_packages}
+      - {type: ref, table: deliverables, field: milestone, to: milestones}
+      - {type: ref, table: milestones, field: wp, to: work_packages}
+      - {type: has_child, table: aims, child: work_packages, field: aim}
+      - {type: has_child, table: work_packages, child: deliverables, field: wp}
+      - {type: order, table: work_packages, lo: start, hi: end}
+      - {type: range, table: work_packages, field: end, min: 1, max: project.months}
+      - {type: range, table: deliverables, field: month, min: 1, max: project.months}
+      - {type: range, table: milestones, field: month, min: 1, max: project.months}
+      - {type: sum, table: budget_lines, field: amount, equals: project.total_budget}
+      - {type: sum, table: budget_lines, field: amount, equals: {fact: budget_total}}
+      - {type: sum, table: work_packages, field: person_months, equals: project.person_months}
+      - {type: sum, table: budget_lines, field: person_months, equals: project.person_months}
+  - {id: criteria, kind: coverage, file: profile/criteria.yaml, label: funder criterion}
+  - {id: length, kind: limit, label: proposal, max_words: "${max_words}", exclude: ["*appendi*"]}

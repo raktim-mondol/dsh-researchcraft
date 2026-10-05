@@ -1,0 +1,27 @@
+description: Systematic review (PRISMA 2020). Flow arithmetic must close, every checklist item maps to text, standard sections exist.
+params:
+  abstract_words: 300
+sections: [Introduction, Methods, Results, Discussion, Conclusion]
+scaffold_facts:
+  - {id: records_identified, kind: value, value: 0, note: "PRISMA flow: replace with the number from your search log"}
+  - {id: duplicates_removed, kind: value, value: 0}
+  - {id: records_screened, kind: value, value: 0}
+  - {id: records_excluded, kind: value, value: 0, note: "excluded at title/abstract"}
+  - {id: reports_assessed, kind: value, value: 0}
+  - {id: reports_excluded, kind: value, value: 0, note: "excluded at full text"}
+  - {id: studies_included, kind: value, value: 0}
+scaffold:
+  profile/prisma_map.yaml: |
+    # PRISMA 2020 item -> the units that report it.   items: {"1": {units: [intro.p001]}, "12": {na: "no meta-analysis is performed"}}
+    # An n/a needs a reason of at least three words.
+    items: {}
+rules:
+  - {id: sections, kind: sections, required: [Introduction, "Methods", "Results", "Discussion", "Conclusion|Conclusions"]}
+  - id: prisma_flow
+    kind: identities
+    expr:
+      - "records_identified - duplicates_removed == records_screened"
+      - "records_screened - records_excluded == reports_assessed"
+      - "reports_assessed - reports_excluded == studies_included"
+  - {id: prisma, kind: checklist, items: prisma2020.yaml, map: profile/prisma_map.yaml}
+  - {id: abstract_length, kind: limit, label: abstract, files: ["*abstract*"], max_words: "${abstract_words}"}

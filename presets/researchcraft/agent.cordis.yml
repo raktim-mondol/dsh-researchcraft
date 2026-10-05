@@ -355,3 +355,15 @@
 # No realm. paper_download also auto-ingests the saved PDF into this store.
 - id: papermemory
   name: dsh-researchcraft/papermemory
+
+# Academic Harness (LaTeX writing oracle). Native `ah_*` tools plus
+# guard / post-edit check / gate / paper-state interceptors. Engine is
+# vendored in this plugin (`vendor/academic-harness`); Pi is not required.
+# Inactive outside a tree with ah.yaml. Hooks row must keep inject: []
+# (venv setup lives there). Tools row injects tools and must not await
+# the venv. See academic-harness.js / academic-harness-hooks.js.
+- id: academic-harness
+  name: dsh-researchcraft/academic-harness
+
+- id: academic-harness-hooks
+  name: dsh-researchcraft/academic-harness-hooks

@@ -1,0 +1,173 @@
+checklist: PRISMA 2020 (27 items, 42 sub-items); item wording as abbreviated in the example manuscript's
+  appendix S5
+items:
+- id: '1'
+  section: null
+  topic: Title
+  text: Identify the report as a systematic review.
+- id: '2'
+  section: null
+  topic: Abstract
+  text: Abstract reporting the PRISMA~2020 for Abstracts elements (structured headings are not used).
+- id: '3'
+  section: Introduction
+  topic: Rationale
+  text: Rationale in the context of existing knowledge.
+- id: '4'
+  section: Introduction
+  topic: Objectives
+  text: Explicit objectives and research questions.
+- id: '5'
+  section: Methods
+  topic: Eligibility criteria
+  text: Inclusion/exclusion criteria and grouping for synthesis.
+- id: '6'
+  section: Methods
+  topic: Information sources
+  text: Databases, registers, reference lists; dates last searched.
+- id: '7'
+  section: Methods
+  topic: Search strategy
+  text: Full search strategies incl. filters and limits.
+- id: '8'
+  section: Methods
+  topic: Selection process
+  text: Reviewer numbers, independence, screening method.
+- id: '9'
+  section: Methods
+  topic: Data collection process
+  text: Reviewer numbers, independence, data confirmation.
+- id: 10a
+  section: Methods
+  topic: Data items
+  text: List and define all outcomes sought; specify whether all compatible results were sought and, if
+    not, how the results to collect were decided.
+- id: 10b
+  section: Methods
+  topic: Data items
+  text: List and define all other variables sought (e.g. study/dataset characteristics); describe assumptions
+    about missing or unclear information.
+- id: '11'
+  section: Methods
+  topic: Study risk-of-bias assessment
+  text: Tool, reviewers, independence.
+- id: '12'
+  section: Methods
+  topic: Effect measures
+  text: Not applicable---the review performs no quantitative meta-analysis (descriptive synthesis only).
+- id: 13a
+  section: Methods
+  topic: Synthesis methods
+  text: Processes used to decide which studies were eligible for each synthesis.
+- id: 13b
+  section: Methods
+  topic: Synthesis methods
+  text: Methods to prepare data for presentation/synthesis, incl. missing-statistic handling and conversions.
+- id: 13c
+  section: Methods
+  topic: Synthesis methods
+  text: Methods to tabulate or visually display results of individual studies and syntheses.
+- id: 13d
+  section: Methods
+  topic: Synthesis methods
+  text: Synthesis method and rationale; if meta-analysis, model/heterogeneity method/software.
+- id: 13e
+  section: Methods
+  topic: Synthesis methods
+  text: Methods used to explore possible causes of heterogeneity (e.g. subgroup analysis, meta-regression).
+- id: 13f
+  section: Methods
+  topic: Synthesis methods
+  text: Sensitivity analyses conducted to assess robustness of synthesized results.
+- id: '14'
+  section: Methods
+  topic: Reporting-bias assessment
+  text: Assessment of missing-result risk.
+- id: '15'
+  section: Methods
+  topic: Certainty assessment
+  text: Certainty/confidence assessment method.
+- id: 16a
+  section: Results
+  topic: Study selection
+  text: Numbers of records screened, assessed and included, ideally with a flow diagram.
+- id: 16b
+  section: Results
+  topic: Study selection
+  text: Cite studies that might appear to meet inclusion criteria but were excluded, with reasons.
+- id: '17'
+  section: Results
+  topic: Study characteristics
+  text: Cite each included study; characteristics.
+- id: '18'
+  section: Results
+  topic: Risk of bias in studies
+  text: RoB assessments per study.
+- id: '19'
+  section: Results
+  topic: Results of individual studies
+  text: Per-study findings and reported performance metrics.
+- id: 20a
+  section: Results
+  topic: Synthesis results
+  text: Per-synthesis summary of characteristics and risk of bias among contributing studies.
+- id: 20b
+  section: Results
+  topic: Synthesis results
+  text: Results of all statistical syntheses conducted.
+- id: 20c
+  section: Results
+  topic: Synthesis results
+  text: Results of investigations into possible causes of heterogeneity.
+- id: 20d
+  section: Results
+  topic: Synthesis results
+  text: Results of sensitivity analyses assessing robustness.
+- id: '21'
+  section: Results
+  topic: Reporting biases
+  text: Missing-result risk per synthesis.
+- id: '22'
+  section: Results
+  topic: Certainty of evidence
+  text: Certainty per outcome.
+- id: 23a
+  section: Discussion
+  topic: Discussion
+  text: General interpretation of results in the context of other evidence.
+- id: 23b
+  section: Discussion
+  topic: Discussion
+  text: Limitations of the evidence included in the review.
+- id: 23c
+  section: Discussion
+  topic: Discussion
+  text: Limitations of the review processes used.
+- id: 23d
+  section: Discussion
+  topic: Discussion
+  text: Implications for practice, policy and future research.
+- id: 24a
+  section: Other information
+  topic: Registration and protocol
+  text: Registration name/number, or a statement that the review was not registered.
+- id: 24b
+  section: Other information
+  topic: Registration and protocol
+  text: Where the protocol can be accessed, or a statement that a protocol was not prepared.
+- id: 24c
+  section: Other information
+  topic: Registration and protocol
+  text: Amendments to information provided at registration or in the protocol, and why.
+- id: '25'
+  section: Other information
+  topic: Support
+  text: Funding sources and funder roles.
+- id: '26'
+  section: Other information
+  topic: Competing interests
+  text: Author competing-interest declarations.
+- id: '27'
+  section: Other information
+  topic: Availability of data, code and other materials
+  text: Public availability of forms, extracted data, analysis code.

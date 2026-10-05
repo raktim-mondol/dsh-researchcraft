@@ -1,0 +1,23 @@
+description: Thesis. Chapters, publications and contributions are one author-owned record set; each contribution is stated in its chapter and again in the conclusion.
+params:
+  conclusion_glob: "*conclusion*"
+sections: [Introduction, Background, Conclusion]
+scaffold:
+  profile/thesis.yaml: |
+    # The author owns this file (agents cannot write it).
+    chapters: []            # - {id: ch3, title: ..., role: contribution}   (role: contribution | framing)
+    publications: []        # - {id: p1, chapters: [ch3], status: published}
+    contributions: []       # - {id: k1, chapter: ch3, text: ...}
+  profile/contributions.yaml: |
+    # Each contribution: a unit in its chapter and a unit in the conclusion.
+    items: []               # - {id: k1, units: [ch3.p004, conclusion.p002]}
+rules:
+  - {id: sections, kind: sections, required: [Introduction, "Conclusion|Conclusions|Conclusion and Future Work|Conclusions and Future Work"]}
+  - id: structure
+    kind: records
+    file: profile/thesis.yaml
+    checks:
+      - {type: ref, table: publications, field: chapters, to: chapters}
+      - {type: ref, table: contributions, field: chapter, to: chapters}
+      - {type: has_child, table: chapters, child: contributions, field: chapter, where: {role: contribution}}
+  - {id: contributions, kind: coverage, file: profile/contributions.yaml, label: contribution, groups: [["${conclusion_glob}"]], ids_from: {file: profile/thesis.yaml, table: contributions}}
