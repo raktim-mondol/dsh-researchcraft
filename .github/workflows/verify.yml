@@ -15,12 +15,17 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   boot:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -31,6 +36,9 @@ jobs:
       - name: Install plugin dependencies
         run: npm install
 
+      - name: Check generated cordis patch is current
+        run: node scripts/build-cordis-patch.mjs --check
+
       - name: Rebuild the client bundle and check it's committed
         run: |
           npm run build
@@ -39,30 +47,11 @@ jobs:
             exit 1
           fi
 
-      # Pinned instead of `npm install -g @deepseek-ai/dsh`: on 2026-09-22
-      # @deepseek-ai/dsh-web-app@0.1.5-rc.3 was published depending on
-      # @deepseek-ai/dsh-client-ui-sidebar-documentpreview@^0.1.5-rc.3, which
-      # was never published (a partial upstream release). An unpinned
-      # install picks up rc.3 to satisfy dsh's own `^0.1.5-rc.2` range and
-      # fails with ETARGET. The override freezes just that edge to the last
-      # known-good pair; bump both together once upstream is consistent again.
+      # Pin the CLI to the same 0.2.0-rc.2 line as package.json dsh-* deps.
+      # The 0.1.5-rc.2 pin plus a web-app override sent npm into a peer-
+      # resolution loop that OOM'd the runner (~1h, exit 134).
       - name: Install the dsh CLI
-        run: |
-          mkdir -p /tmp/dsh-cli
-          cat > /tmp/dsh-cli/package.json <<'EOF'
-          {
-            "name": "dsh-cli-pin",
-            "private": true,
-            "dependencies": {
-              "@deepseek-ai/dsh": "0.1.5-rc.2"
-            },
-            "overrides": {
-              "@deepseek-ai/dsh-web-app": "0.1.5-rc.2"
-            }
-          }
-          EOF
-          npm install --prefix /tmp/dsh-cli
-          echo "/tmp/dsh-cli/node_modules/.bin" >> "$GITHUB_PATH"
+        run: npm install -g @deepseek-ai/dsh@0.2.0-rc.2
 
       - name: Compose a throwaway profile that installs this plugin
         run: |
@@ -111,6 +100,10 @@ jobs:
           wait "$pid" 2>/dev/null || true
           if [ "$ok" != "1" ]; then
             echo "::error::dsh did not report a listening web server — see boot.log above"
+            exit 1
+          fi
+          if grep -qiE 'failed to import|entry "agent-presets" not found' boot.log; then
+            echo "::error::dsh booted with plugin/preset errors — see boot.log above"
             exit 1
           fi
           echo "booted cleanly"
